@@ -106,6 +106,55 @@
         "padding_bottom": 0
       }
     },
+    "image_banner_MV6YCr": {
+      "type": "image-banner",
+      "blocks": {
+        "heading_awRADm": {
+          "type": "heading",
+          "settings": {
+            "heading": "Rolex",
+            "heading_size": "h1"
+          }
+        },
+        "text_VJxqEt": {
+          "type": "text",
+          "settings": {
+            "text": "Voll geil Rolex",
+            "text_style": "body"
+          }
+        },
+        "buttons_z3a6Jc": {
+          "type": "buttons",
+          "settings": {
+            "button_label_1": "Click",
+            "button_link_1": "",
+            "button_style_secondary_1": false,
+            "button_label_2": "Button",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_awRADm",
+        "text_VJxqEt",
+        "buttons_z3a6Jc"
+      ],
+      "name": "t:sections.image-banner.presets.name",
+      "settings": {
+        "image": "shopify://shop_images/knightsbridge-rolex-boutique-square.webp",
+        "image_overlay_opacity": 0,
+        "image_height": "medium",
+        "desktop_content_position": "middle-center",
+        "show_text_box": true,
+        "desktop_content_alignment": "center",
+        "color_scheme": "",
+        "image_behavior": "none",
+        "mobile_content_alignment": "center",
+        "stack_images_on_mobile": true,
+        "show_text_below": true
+      }
+    },
     "featured-collection": {
       "type": "featured-collection",
       "settings": {
@@ -225,6 +274,7 @@
     "video_U4J44t",
     "rich_text_pWfF7z",
     "image-with-text",
+    "image_banner_MV6YCr",
     "featured-collection",
     "collection_list_FKFTwQ",
     "image_with_text_TxD8TG"
