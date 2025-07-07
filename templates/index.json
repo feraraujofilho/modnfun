@@ -1,1 +1,232 @@
-{"sections":{"video_U4J44t":{"type":"video","settings":{"heading":"","heading_size":"h0","enable_video_looping":false,"video":"shopify:\/\/files\/videos\/8296085-hd_1920_1080_25fps.mp4","video_url":"","description":"","full_width":true,"color_scheme":"","padding_top":0,"padding_bottom":36}},"image-with-text":{"type":"image-with-text","blocks":{"heading":{"type":"heading","settings":{"heading":"Browse our latest products","heading_size":"h1"}},"button":{"type":"button","settings":{"button_label":"Shop now","button_link":"shopify:\/\/collections\/all","button_style_secondary":false}}},"block_order":["heading","button"],"settings":{"image":"shopify:\/\/shop_images\/woman-2564660_1280.jpg","height":"large","desktop_image_width":"large","layout":"text_first","desktop_content_position":"middle","desktop_content_alignment":"left","content_layout":"overlap","section_color_scheme":"scheme-1","color_scheme":"scheme-2","image_behavior":"none","mobile_content_alignment":"left","padding_top":0,"padding_bottom":0}},"featured-collection":{"type":"featured-collection","settings":{"title":"Featured products","heading_size":"h2","description":"","show_description":false,"description_style":"body","collection":"clothing-products","products_to_show":4,"columns_desktop":4,"full_width":false,"show_view_all":false,"view_all_style":"solid","enable_desktop_slider":false,"color_scheme":"scheme-1","image_ratio":"square","image_shape":"default","show_secondary_image":true,"show_vendor":false,"show_rating":false,"quick_add":"none","columns_mobile":"2","swipe_on_mobile":true,"padding_top":56,"padding_bottom":68}},"collection_list_FKFTwQ":{"type":"collection-list","blocks":{"featured_collection_rVKgra":{"type":"featured_collection","settings":{"collection":""}},"featured_collection_qLWFhU":{"type":"featured_collection","settings":{"collection":""}},"featured_collection_gxMA7n":{"type":"featured_collection","settings":{"collection":""}}},"block_order":["featured_collection_rVKgra","featured_collection_qLWFhU","featured_collection_gxMA7n"],"settings":{"title":"Collections","heading_size":"h1","image_ratio":"square","columns_desktop":3,"color_scheme":"","show_view_all":false,"columns_mobile":"1","swipe_on_mobile":false,"padding_top":36,"padding_bottom":36}},"image_with_text_TxD8TG":{"type":"image-with-text","blocks":{"heading_z3R9z8":{"type":"heading","settings":{"heading":"Image with text","heading_size":"h1"}},"text_wV4t68":{"type":"text","settings":{"text":"<p>Pair text with an image to focus on your chosen product, collection, or blog post. Add details on availability, style, or even provide a review.<\/p>","text_style":"body"}},"button_Cykrrj":{"type":"button","settings":{"button_label":"Button label","button_link":"","button_style_secondary":false}}},"block_order":["heading_z3R9z8","text_wV4t68","button_Cykrrj"],"settings":{"height":"adapt","desktop_image_width":"medium","layout":"image_first","desktop_content_position":"top","desktop_content_alignment":"left","content_layout":"no-overlap","section_color_scheme":"","color_scheme":"","image_behavior":"none","mobile_content_alignment":"left","padding_top":36,"padding_bottom":36}}},"order":["video_U4J44t","image-with-text","featured-collection","collection_list_FKFTwQ","image_with_text_TxD8TG"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "video_U4J44t": {
+      "type": "video",
+      "settings": {
+        "heading": "",
+        "heading_size": "h0",
+        "enable_video_looping": false,
+        "video": "shopify://files/videos/8296085-hd_1920_1080_25fps.mp4",
+        "video_url": "",
+        "description": "",
+        "full_width": true,
+        "color_scheme": "",
+        "padding_top": 0,
+        "padding_bottom": 36
+      }
+    },
+    "rich_text_pWfF7z": {
+      "type": "rich-text",
+      "blocks": {
+        "heading_F8khDa": {
+          "type": "heading",
+          "settings": {
+            "heading": "Das ist Neu",
+            "heading_size": "h1"
+          }
+        },
+        "text_GprWNq": {
+          "type": "text",
+          "settings": {
+            "text": "<p>So Cool!</p>"
+          }
+        },
+        "button_nQfmMD": {
+          "type": "button",
+          "settings": {
+            "button_label": "Einfach Klicken",
+            "button_link": "",
+            "button_style_secondary": false,
+            "button_label_2": "",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_F8khDa",
+        "text_GprWNq",
+        "button_nQfmMD"
+      ],
+      "name": "t:sections.rich-text.presets.name",
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "",
+        "full_width": true,
+        "padding_top": 40,
+        "padding_bottom": 52
+      }
+    },
+    "image-with-text": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading": {
+          "type": "heading",
+          "settings": {
+            "heading": "Browse our latest products",
+            "heading_size": "h1"
+          }
+        },
+        "button": {
+          "type": "button",
+          "settings": {
+            "button_label": "Shop now",
+            "button_link": "shopify://collections/all",
+            "button_style_secondary": false
+          }
+        }
+      },
+      "block_order": [
+        "heading",
+        "button"
+      ],
+      "settings": {
+        "image": "shopify://shop_images/woman-2564660_1280.jpg",
+        "height": "large",
+        "desktop_image_width": "large",
+        "layout": "text_first",
+        "desktop_content_position": "middle",
+        "desktop_content_alignment": "left",
+        "content_layout": "overlap",
+        "section_color_scheme": "scheme-1",
+        "color_scheme": "scheme-2",
+        "image_behavior": "none",
+        "mobile_content_alignment": "left",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "featured-collection": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "Featured products",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "clothing-products",
+        "products_to_show": 4,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": false,
+        "view_all_style": "solid",
+        "enable_desktop_slider": false,
+        "color_scheme": "scheme-1",
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 56,
+        "padding_bottom": 68
+      }
+    },
+    "collection_list_FKFTwQ": {
+      "type": "collection-list",
+      "blocks": {
+        "featured_collection_rVKgra": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": ""
+          }
+        },
+        "featured_collection_qLWFhU": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": ""
+          }
+        },
+        "featured_collection_gxMA7n": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": ""
+          }
+        }
+      },
+      "block_order": [
+        "featured_collection_rVKgra",
+        "featured_collection_qLWFhU",
+        "featured_collection_gxMA7n"
+      ],
+      "settings": {
+        "title": "Collections",
+        "heading_size": "h1",
+        "image_ratio": "square",
+        "columns_desktop": 3,
+        "color_scheme": "",
+        "show_view_all": false,
+        "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "image_with_text_TxD8TG": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading_z3R9z8": {
+          "type": "heading",
+          "settings": {
+            "heading": "Image with text",
+            "heading_size": "h1"
+          }
+        },
+        "text_wV4t68": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Pair text with an image to focus on your chosen product, collection, or blog post. Add details on availability, style, or even provide a review.</p>",
+            "text_style": "body"
+          }
+        },
+        "button_Cykrrj": {
+          "type": "button",
+          "settings": {
+            "button_label": "Button label",
+            "button_link": "",
+            "button_style_secondary": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_z3R9z8",
+        "text_wV4t68",
+        "button_Cykrrj"
+      ],
+      "settings": {
+        "height": "adapt",
+        "desktop_image_width": "medium",
+        "layout": "image_first",
+        "desktop_content_position": "top",
+        "desktop_content_alignment": "left",
+        "content_layout": "no-overlap",
+        "section_color_scheme": "",
+        "color_scheme": "",
+        "image_behavior": "none",
+        "mobile_content_alignment": "left",
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    }
+  },
+  "order": [
+    "video_U4J44t",
+    "rich_text_pWfF7z",
+    "image-with-text",
+    "featured-collection",
+    "collection_list_FKFTwQ",
+    "image_with_text_TxD8TG"
+  ]
+}
