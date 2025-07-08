@@ -1,42 +1,39 @@
-# Theme Sync Automation Setup Guide
+# Daily Theme Sync Guide: Production to Staging Using GitHub Actions
 
-This guide will help you set up automated daily synchronization of your Shopify theme from production to staging.
+This guide demonstrates how to automatically synchronize your Shopify theme from production to staging daily using GitHub Actions, Shopify's GitHub integration, and the Theme Access app. This ensures your staging environment always reflects the latest production theme changes even when staff members perform updates via the theme editor in admin. Shopify merchants and partners have varying needs regarding staging and production workflows. This guide offers an example of how to synchronize daily production and staging theme changes, and the automation can be adapted to suit specific requirements.
+
+**Example Implementation:** https://github.com/feraraujofilho/modnfun
 
 ## Prerequisites
 
-- GitHub repository with staging branch connected to your staging store via Shopify GitHub integration
-- Admin access to both production and staging Shopify stores
-- Admin access to the GitHub repository
+- GitHub repository with main and staging branches connected to your production and staging stores respectively via Shopify GitHub integration
+- Basic understanding of GitHub and version control
 
 ## Setup Steps
 
-### 1. Generate Theme Access Passwords
+### Step 1: Install Theme Access App
 
-Theme Access passwords are specifically designed for CI/CD operations with Shopify themes. You'll need to generate one for your production store.
+The Theme Access app provides secure, scoped credentials for CI/CD operations without exposing admin credentials.
 
-#### For Production Store:
+1. **Navigate to your production store admin:**
 
-1. **Install the Theme Access app**:
+   ```
+   https://your-production-store.myshopify.com/admin
+   ```
 
-   - Go to your production store admin: `https://your-production-store.myshopify.com/admin`
-   - Navigate to **Apps** → **Visit the Shopify App Store**
-   - Search for "Theme Access" by Shopify
-   - Install the Theme Access app (it's free)
+2. **Install Theme Access:**
 
-2. **Generate a password**:
+   - Install the ["Theme Access" app](https://apps.shopify.com/theme-access) (free)
 
-   - Once installed, open the Theme Access app from your Apps section
+3. **Generate access password:**
+   - Open Theme Access from your Apps section
    - Click **Generate password**
-   - Give it a descriptive name like "GitHub Actions Theme Sync"
-   - Copy the password immediately - it will only be shown once!
-   - The password will look like: `shptka_xxxxxxxxxxxx`
+   - Add your email and name
+   - Click **Create password**
+   - You will receive a link per email to access the password
+   - Copy the password and the production store URL, you will need that
 
-3. **Important notes**:
-   - Theme Access passwords are scoped specifically for theme operations
-   - They provide read/write access to themes without exposing your full admin credentials
-   - Each password is tied to the specific store where it was generated
-
-### 2. Configure GitHub Secrets
+### Step 2: Configure GitHub Secrets
 
 In your GitHub repository:
 
@@ -49,11 +46,101 @@ In your GitHub repository:
 | `PRODUCTION_STORE`                 | `your-production-store.myshopify.com` | Your production store URL               |
 | `PRODUCTION_THEME_ACCESS_PASSWORD` | `shptka_xxxxxxxxxxxx`                 | The Theme Access password you generated |
 
-### 3. Create the Workflow File
+### Step 3: Create the Workflow File
 
-The workflow file has already been created at `.github/workflows/sync-theme-prod-to-staging.yml`
+Create `.github/workflows/sync-theme-prod-to-staging.yml`:
 
-### 4. Customize the Schedule (Optional)
+```yaml
+name: Sync Theme from Production to Staging
+
+on:
+  schedule:
+    # Runs daily at 2 AM UTC (adjust for your timezone)
+    - cron: "0 2 * * *"
+  workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: write # For pushing commits
+  issues: write # For creating issues on failure
+
+jobs:
+  sync-theme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Shopify CLI
+        run: npm install -g @shopify/cli @shopify/theme
+
+      - name: Pull theme from production
+        env:
+          SHOPIFY_FLAG_STORE: ${{ secrets.PRODUCTION_STORE }}
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.PRODUCTION_THEME_ACCESS_PASSWORD }}
+          SHOPIFY_CLI_TTY: 0
+        run: |
+          # Pull the currently published theme
+          shopify theme pull --live --force
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -z $(git status --porcelain) ]]; then
+            echo "No changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          # Add all changes
+          git add -A
+
+          # Create commit with timestamp
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          git commit -m "Sync theme from production - $TIMESTAMP"
+
+          # Push to staging branch
+          git push origin staging
+        continue-on-error: true
+        id: push_changes
+
+      - name: Check push result
+        if: steps.check_changes.outputs.has_changes == 'true' && steps.push_changes.outcome == 'failure'
+        run: |
+          echo "::error::Failed to push changes to staging branch. This might be due to conflicts."
+          exit 1
+
+      - name: Send failure notification
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Theme Sync Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `The daily theme sync from production to staging failed.\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nThis is likely due to conflicts between production and staging themes. Please resolve manually.`,
+              labels: ['automation-failure', 'theme-sync']
+            });
+```
+
+### Step 4: Customize the Schedule (Optional)
 
 The workflow is set to run daily at 2 AM UTC. To change this:
 
@@ -67,7 +154,7 @@ Common examples:
 - `0 */6 * * *` - Every 6 hours
 - `0 9 * * 1-5` - Weekdays at 9 AM UTC
 
-### 5. Test the Workflow
+### Step 5: Test the Workflow
 
 1. Go to **Actions** tab in your GitHub repository
 2. Find "Sync Theme from Production to Staging"
@@ -148,10 +235,11 @@ The current setup creates GitHub issues on failure. You can also:
 
 ## Troubleshooting Theme Access
 
-If you can't find the Theme Access app:
+If you're having issues with Theme Access:
 
-- Make sure you're looking in the Shopify App Store, not the admin apps section
-- The app is created by Shopify and should be free
-- Alternative: You can use the Shopify Partners CLI token if you have a Partner account
+- Make sure you check your email for the password link
+- The password link is sent to the email you provided when generating the password
+- Store the password securely as it won't be shown again
+- The store URL should be in the format: `store-name.myshopify.com` (no https://)
 
 For more information, see [Shopify's documentation on CI/CD with themes](https://shopify.dev/docs/storefronts/themes/tools/cli/ci-cd).
