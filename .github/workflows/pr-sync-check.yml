@@ -38,8 +38,8 @@ jobs:
             echo "theme_token=${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}" >> $GITHUB_OUTPUT
           else
             echo "Syncing from production to staging"
-            echo "store_url=${{ secrets.PRODUCTION_STORE_URL }}" >> $GITHUB_OUTPUT
-            echo "theme_token=${{ secrets.PRODUCTION_THEME_TOKEN }}" >> $GITHUB_OUTPUT
+            echo "store_url=${{ secrets.PRODUCTION_STORE }}" >> $GITHUB_OUTPUT
+            echo "theme_token=${{ secrets.PRODUCTION_THEME_ACCESS_PASSWORD }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Pull Latest Theme
