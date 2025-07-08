@@ -48,6 +48,21 @@
         "padding_bottom": 52
       }
     },
+    "video_U4J44t": {
+      "type": "video",
+      "settings": {
+        "heading": "",
+        "heading_size": "h0",
+        "enable_video_looping": false,
+        "video": "shopify://files/videos/8296085-hd_1920_1080_25fps.mp4",
+        "video_url": "",
+        "description": "",
+        "full_width": true,
+        "color_scheme": "",
+        "padding_top": 0,
+        "padding_bottom": 36
+      }
+    },
     "image-with-text": {
       "type": "image-with-text",
       "blocks": {
@@ -241,8 +256,8 @@
     }
   },
   "order": [
-    "video_U4J44t",
     "rich_text_pWfF7z",
+    "video_U4J44t",
     "image-with-text",
     "image_banner_MV6YCr",
     "featured-collection",
