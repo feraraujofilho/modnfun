@@ -2,8 +2,8 @@ name: Sync Theme from Production to Staging
 
 on:
   schedule:
-    # Runs at 13:40 Berlin time (12:40 UTC in winter, 11:40 UTC in summer)
-    - cron: "40 11 * * *"
+    # Runs at 13:50 Berlin time (12:50 UTC in winter, 11:50 UTC in summer)
+    - cron: "50 11 * * *"
   workflow_dispatch: # Allows manual triggering
 
 jobs:
