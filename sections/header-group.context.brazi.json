@@ -8,20 +8,9 @@
  * ------------------------------------------------------------
  */
 {
-  "parent": "index.json",
+  "parent": "header-group.json",
   "context": {
-    "market": "france"
+    "market": "brazi"
   },
-  "sections": {
-    "rich_text_pWfF7z": {
-      "settings": {},
-      "blocks": {
-        "heading_F8khDa": {
-          "settings": {
-            "heading": "FRENCHHHH"
-          }
-        }
-      }
-    }
-  }
+  "sections": {}
 }
