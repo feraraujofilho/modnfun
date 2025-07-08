@@ -6,6 +6,10 @@ on:
     - cron: "50 11 * * *"
   workflow_dispatch: # Allows manual triggering
 
+permissions:
+  contents: write # For pushing commits
+  issues: write # For creating issues on failure
+
 jobs:
   sync-theme:
     runs-on: ubuntu-latest
