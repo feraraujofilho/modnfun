@@ -8,12 +8,9 @@
  * ------------------------------------------------------------
  */
 {
-  "markets": {
-    "brazi": {
-      "parent": "@default"
-    },
-    "france": {
-      "parent": "@default"
-    }
-  }
+  "parent": "index.json",
+  "context": {
+    "market": "de"
+  },
+  "sections": {}
 }
