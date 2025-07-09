@@ -15,7 +15,7 @@
         "heading_yqUFgF": {
           "type": "heading",
           "settings": {
-            "heading": "This is another title to Show the differences!",
+            "heading": "This is my prod store",
             "heading_size": "h1"
           }
         }
@@ -104,7 +104,9 @@
           }
         }
       },
-      "block_order": ["heading_code_created"],
+      "block_order": [
+        "heading_code_created"
+      ],
       "settings": {
         "desktop_content_position": "center",
         "content_alignment": "center",
