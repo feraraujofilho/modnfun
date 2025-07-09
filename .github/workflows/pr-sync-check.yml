@@ -58,6 +58,9 @@ jobs:
             echo "has_conflicts=false" >> $GITHUB_OUTPUT
           else
             echo "Theme changes detected, checking for conflicts..."
+            # Configure git user for commits
+            git config --global user.email "actions@github.com"
+            git config --global user.name "GitHub Actions Bot"
             git commit -m "Sync: Latest theme changes from ${{ steps.target.outputs.store_url }}"
             
             # Try to merge and detect conflicts
