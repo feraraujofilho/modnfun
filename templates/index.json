@@ -20,9 +20,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_yqUFgF"
-      ],
+      "block_order": ["heading_yqUFgF"],
       "name": "t:sections.rich-text.presets.name",
       "settings": {
         "desktop_content_position": "center",
@@ -61,11 +59,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_F8khDa",
-        "text_GprWNq",
-        "button_nQfmMD"
-      ],
+      "block_order": ["heading_F8khDa", "text_GprWNq", "button_nQfmMD"],
       "name": "t:sections.rich-text.presets.name",
       "settings": {
         "desktop_content_position": "center",
@@ -76,6 +70,28 @@
         "padding_bottom": 52
       }
     },
+    "rich_text_code_created": {
+      "type": "rich-text",
+      "blocks": {
+        "heading_code_created": {
+          "type": "heading",
+          "settings": {
+            "heading": "this is a block created IN THE FEATURE 2 BRANCH",
+            "heading_size": "h2"
+          }
+        }
+      },
+      "block_order": ["heading_code_created"],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "",
+        "full_width": true,
+        "padding_top": 40,
+        "padding_bottom": 52
+      }
+    },
+
     "video_U4J44t": {
       "type": "video",
       "settings": {
@@ -110,10 +126,7 @@
           }
         }
       },
-      "block_order": [
-        "heading",
-        "button"
-      ],
+      "block_order": ["heading", "button"],
       "settings": {
         "image": "shopify://shop_images/woman-2564660_1280.jpg",
         "height": "large",
@@ -159,11 +172,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_awRADm",
-        "text_VJxqEt",
-        "buttons_z3a6Jc"
-      ],
+      "block_order": ["heading_awRADm", "text_VJxqEt", "buttons_z3a6Jc"],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
         "image": "shopify://shop_images/knightsbridge-rolex-boutique-square.webp",
@@ -273,11 +282,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_z3R9z8",
-        "text_wV4t68",
-        "button_Cykrrj"
-      ],
+      "block_order": ["heading_z3R9z8", "text_wV4t68", "button_Cykrrj"],
       "settings": {
         "height": "adapt",
         "desktop_image_width": "medium",
