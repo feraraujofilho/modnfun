@@ -15,7 +15,7 @@
         "heading_yqUFgF": {
           "type": "heading",
           "settings": {
-            "heading": "This is another title to Show the differences!",
+            "heading": "This is my staging store",
             "heading_size": "h1"
           }
         }
@@ -29,23 +29,6 @@
         "full_width": true,
         "padding_top": 40,
         "padding_bottom": 52
-      }
-    },
-    "image_banner_cx7LKb": {
-      "type": "image-banner",
-      "name": "t:sections.image-banner.presets.name",
-      "settings": {
-        "image": "shopify://shop_images/wos-showroom-battersea-oct22.webp",
-        "image_overlay_opacity": 0,
-        "image_height": "medium",
-        "desktop_content_position": "middle-center",
-        "show_text_box": true,
-        "desktop_content_alignment": "center",
-        "color_scheme": "",
-        "image_behavior": "none",
-        "mobile_content_alignment": "center",
-        "stack_images_on_mobile": true,
-        "show_text_below": true
       }
     },
     "rich_text_pWfF7z": {
@@ -108,6 +91,7 @@
         "padding_bottom": 52
       }
     },
+
     "video_U4J44t": {
       "type": "video",
       "settings": {
@@ -317,10 +301,8 @@
   },
   "order": [
     "rich_text_iy8iBb",
-    "image_banner_cx7LKb",
-    "rich_text_pWfF7z",
-    "rich_text_code_created",
     "video_U4J44t",
+    "rich_text_pWfF7z",
     "image-with-text",
     "image_banner_MV6YCr",
     "featured-collection",
