@@ -34,6 +34,17 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions Bot"
 
+      - name: Create Temporary Branch for Conflict Check
+        id: create-temp-branch
+        run: |
+          # Create a temporary branch from the current PR branch
+          TEMP_BRANCH="temp-conflict-check-$(date +%s)"
+          git checkout -b $TEMP_BRANCH
+          echo "temp_branch=$TEMP_BRANCH" >> $GITHUB_OUTPUT
+
+          # Save the current commit hash to compare later
+          echo "original_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Pull Production Theme Changes
         id: pull-production
         env:
@@ -52,21 +63,25 @@ jobs:
             echo "Production theme changes detected"
             echo "has_production_changes=true" >> $GITHUB_OUTPUT
             
-            # Commit production theme changes
-            git commit -m "Sync: Latest theme changes from production - $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-            echo "production_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+            # Commit production theme changes to temp branch only
+            git commit -m "Temp: Production theme changes"
+            
+            # Get list of changed files for reporting
+            echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+            git diff --name-only HEAD~1 HEAD >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
 
-      - name: Merge Base Branch and Check Conflicts
+      - name: Check Merge Conflicts with Base Branch
         id: merge-check
         run: |
           echo "Fetching latest ${{ github.base_ref }} branch..."
           git fetch origin ${{ github.base_ref }}
 
-          # First, try to merge the base branch
-          echo "Attempting to merge origin/${{ github.base_ref }} into current branch..."
+          # Try to merge the base branch
+          echo "Checking merge with origin/${{ github.base_ref }}..."
           if git merge origin/${{ github.base_ref }} --no-edit --no-ff; then
-            echo "Successfully merged ${{ github.base_ref }} into PR branch"
+            echo "No conflicts detected with ${{ github.base_ref }}"
             echo "merge_success=true" >> $GITHUB_OUTPUT
             echo "has_conflicts=false" >> $GITHUB_OUTPUT
           else
@@ -78,19 +93,24 @@ jobs:
             echo "conflict_files<<EOF" >> $GITHUB_OUTPUT
             git diff --name-only --diff-filter=U >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
+            
+            # Get conflict markers for specific guidance
+            echo "conflict_details<<EOF" >> $GITHUB_OUTPUT
+            git diff --check || true >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
 
-      - name: Push Changes if Successful
-        if: steps.merge-check.outputs.merge_success == 'true' && steps.pull-production.outputs.has_production_changes == 'true'
-        id: push-changes
+      - name: Cleanup Temporary Branch
+        if: always()
         run: |
-          if git push origin ${{ github.head_ref }}; then
-            echo "Successfully pushed production theme changes"
-            echo "push_success=true" >> $GITHUB_OUTPUT
-          else
-            echo "Failed to push changes"
-            echo "push_success=false" >> $GITHUB_OUTPUT
-          fi
+          # Go back to the original PR branch
+          git checkout ${{ github.head_ref }}
+
+          # Delete the temporary branch
+          git branch -D ${{ steps.create-temp-branch.outputs.temp_branch }} || true
+
+          # Ensure we're back at the original commit
+          git reset --hard ${{ steps.create-temp-branch.outputs.original_commit }}
 
       - name: Update PR Status
         uses: actions/github-script@v7
@@ -99,9 +119,9 @@ jobs:
             const hasProductionChanges = '${{ steps.pull-production.outputs.has_production_changes }}' === 'true';
             const mergeSuccess = '${{ steps.merge-check.outputs.merge_success }}' === 'true';
             const hasConflicts = '${{ steps.merge-check.outputs.has_conflicts }}' === 'true';
-            const pushSuccess = '${{ steps.push-changes.outputs.push_success }}' === 'true';
             const targetBranch = '${{ github.base_ref }}';
             const conflictFiles = `${{ steps.merge-check.outputs.conflict_files }}`;
+            const changedFiles = `${{ steps.pull-production.outputs.changed_files }}`;
 
             let state = 'success';
             let description = 'Ready to merge';
@@ -112,47 +132,56 @@ jobs:
               description = 'Merge conflicts detected';
               
               const conflictList = conflictFiles.trim().split('\n').filter(f => f).map(f => `- ${f}`).join('\n');
+              const changedList = changedFiles.trim().split('\n').filter(f => f).map(f => `- ${f}`).join('\n');
               
               commentBody = '❌ **Merge Conflicts Detected**\n\n' +
-                'This PR has conflicts after syncing with production theme and merging `' + targetBranch + '` branch.\n\n' +
-                '**Conflicting files:**\n' + conflictList + '\n\n' +
-                '**To resolve:**\n' +
+                'Your PR will have conflicts when merging. These conflicts involve:\n\n';
+              
+              if (hasProductionChanges) {
+                commentBody += '**Files changed in production theme:**\n' + changedList + '\n\n';
+              }
+              
+              commentBody += '**Conflicting files that need resolution:**\n' + conflictList + '\n\n' +
+                '**To resolve locally:**\n' +
                 '```bash\n' +
+                '# First, commit any pending changes\n' +
+                'git add . && git commit -m "Save work"\n\n' +
                 '# Pull latest production theme\n' +
                 'shopify theme pull --live --force\n' +
                 'git add -A && git commit -m "Sync: Production theme"\n\n' +
                 '# Merge ' + targetBranch + ' branch\n' +
                 'git fetch origin ' + targetBranch + '\n' +
                 'git merge origin/' + targetBranch + '\n\n' +
-                '# Resolve conflicts manually, then:\n' +
+                '# Resolve conflicts in your editor, then:\n' +
                 'git add .\n' +
                 'git commit -m "Resolve merge conflicts"\n' +
                 'git push\n' +
-                '```';
-            } else if (hasProductionChanges && pushSuccess) {
-              description = 'Ready to merge (production theme synced)';
-              commentBody = '✅ **Production Theme Synced - Ready to Merge**\n\n' +
-                'This PR has been automatically updated with:\n' +
-                '1. ✅ Latest theme changes from production\n' +
-                '2. ✅ Latest changes from `' + targetBranch + '` branch\n\n' +
-                '**No conflicts detected.** This PR is approved and ready to merge.';
-            } else if (hasProductionChanges && !pushSuccess) {
-              state = 'failure';
-              description = 'Failed to push synced changes';
-              commentBody = '❌ **Push Failed**\n\n' +
-                'Successfully synced with production theme and merged ' + targetBranch + ', but failed to push changes.\n\n' +
-                'Please pull the latest changes and push manually:\n' +
+                '```\n\n' +
+                '⚠️ **Important:** Your feature branch changes are preserved. Resolve conflicts locally to keep your modifications.';
+            } else if (hasProductionChanges) {
+              state = 'warning';
+              description = 'Production theme has changes - manual sync recommended';
+              
+              const changedList = changedFiles.trim().split('\n').filter(f => f).map(f => `- ${f}`).join('\n');
+              
+              commentBody = '⚠️ **Production Theme Has Changes**\n\n' +
+                'No conflicts detected, but production theme has changes in these files:\n' +
+                changedList + '\n\n' +
+                '**Recommended:** Sync these changes to your branch before merging:\n' +
                 '```bash\n' +
-                'git pull origin ${{ github.head_ref }}\n' +
+                'shopify theme pull --live --force\n' +
+                'git add -A\n' +
+                'git commit -m "Sync: Production theme changes"\n' +
                 'git push\n' +
-                '```';
-            } else if (!hasProductionChanges && mergeSuccess) {
-              description = 'Ready to merge';
-              commentBody = '✅ **All Checks Passed - Ready to Merge**\n\n' +
-                '- ✅ No production theme changes detected\n' +
-                '- ✅ Successfully validated merge with `' + targetBranch + '` branch\n' +
-                '- ✅ No conflicts found\n\n' +
-                'This PR is approved and ready to merge.';
+                '```\n\n' +
+                'You can still merge without syncing, but you may overwrite production theme changes.';
+            } else {
+              description = 'Ready to merge - no conflicts';
+              commentBody = '✅ **All Checks Passed**\n\n' +
+                '- ✅ No conflicts with production theme\n' +
+                '- ✅ No conflicts with `' + targetBranch + '` branch\n' +
+                '- ✅ Ready to merge\n\n' +
+                'Your changes are compatible with both production theme and the target branch.';
             }
 
             // Update commit status
@@ -160,7 +189,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.payload.pull_request.head.sha,
-              state: state,
+              state: state === 'warning' ? 'success' : state, // GitHub doesn't have warning state
               description: description,
               context: 'theme-sync-check'
             });
