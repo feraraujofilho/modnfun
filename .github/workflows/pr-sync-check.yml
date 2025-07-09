@@ -1,0 +1,110 @@
+name: PR Sync Check
+
+on:
+  pull_request:
+    branches: [staging, main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  sync-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Shopify CLI
+        run: npm install -g @shopify/cli @shopify/theme
+
+      - name: Determine Target Environment
+        id: target
+        run: |
+          if [ "${{ github.base_ref }}" == "main" ]; then
+            echo "Syncing from staging to check production compatibility"
+            echo "store_url=${{ secrets.SHOPIFY_FLAG_STORE }}" >> $GITHUB_OUTPUT
+            echo "theme_token=${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}" >> $GITHUB_OUTPUT
+          else
+            echo "Syncing from production to staging"
+            echo "store_url=${{ secrets.PRODUCTION_STORE }}" >> $GITHUB_OUTPUT
+            echo "theme_token=${{ secrets.PRODUCTION_THEME_ACCESS_PASSWORD }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull Latest Theme
+        env:
+          SHOPIFY_FLAG_STORE: ${{ steps.target.outputs.store_url }}
+          SHOPIFY_CLI_THEME_TOKEN: ${{ steps.target.outputs.theme_token }}
+        run: |
+          shopify theme pull --live --force
+
+      - name: Check for Conflicts
+        id: conflict-check
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No theme changes to sync"
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+          else
+            echo "Theme changes detected, checking for conflicts..."
+            # Configure git user for commits
+            git config --global user.email "actions@github.com"
+            git config --global user.name "GitHub Actions Bot"
+            git commit -m "Sync: Latest theme changes from ${{ steps.target.outputs.store_url }}"
+            
+            # Try to merge and detect conflicts
+            if git merge origin/${{ github.base_ref }} --no-commit --no-ff; then
+              echo "No conflicts detected"
+              echo "has_conflicts=false" >> $GITHUB_OUTPUT
+              git merge --abort
+            else
+              echo "Conflicts detected!"
+              echo "has_conflicts=true" >> $GITHUB_OUTPUT
+              git merge --abort
+            fi
+          fi
+
+      - name: Update PR Status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasConflicts = '${{ steps.conflict-check.outputs.has_conflicts }}' === 'true';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: hasConflicts ? 'failure' : 'success',
+              description: hasConflicts 
+                ? 'Theme sync conflicts detected' 
+                : 'Theme sync check passed',
+              context: 'theme-sync-check'
+            });
+
+            if (hasConflicts) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '❌ **Theme Sync Conflicts Detected**\n\n' +
+                      'This PR has conflicts with the latest theme changes. ' +
+                      'Please sync your branch with the latest theme updates.\n\n' +
+                      '```bash\n' +
+                      'shopify theme pull --live\n' +
+                      'git add -A\n' +
+                      'git commit -m "Sync: Latest theme changes"\n' +
+                      'git push\n' +
+                      '```'
+              });
+            }
