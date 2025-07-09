@@ -33,6 +33,23 @@
         "padding_bottom": 52
       }
     },
+    "image_banner_cx7LKb": {
+      "type": "image-banner",
+      "name": "t:sections.image-banner.presets.name",
+      "settings": {
+        "image": "shopify://shop_images/wos-showroom-battersea-oct22.webp",
+        "image_overlay_opacity": 0,
+        "image_height": "medium",
+        "desktop_content_position": "middle-center",
+        "show_text_box": true,
+        "desktop_content_alignment": "center",
+        "color_scheme": "",
+        "image_behavior": "none",
+        "mobile_content_alignment": "center",
+        "stack_images_on_mobile": true,
+        "show_text_below": true
+      }
+    },
     "rich_text_pWfF7z": {
       "type": "rich-text",
       "blocks": {
@@ -296,6 +313,7 @@
   },
   "order": [
     "rich_text_iy8iBb",
+    "image_banner_cx7LKb",
     "rich_text_pWfF7z",
     "video_U4J44t",
     "image-with-text",
