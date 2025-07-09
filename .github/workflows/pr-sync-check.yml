@@ -29,7 +29,30 @@ jobs:
       - name: Install Shopify CLI
         run: npm install -g @shopify/cli @shopify/theme
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions Bot"
+
+      - name: Merge Latest Base Branch
+        id: merge-base
+        run: |
+          echo "Fetching latest ${{ github.base_ref }} branch..."
+          git fetch origin ${{ github.base_ref }}
+
+          echo "Attempting to merge origin/${{ github.base_ref }} into current branch..."
+          if git merge origin/${{ github.base_ref }} --no-edit; then
+            echo "Successfully merged ${{ github.base_ref }} into PR branch"
+            echo "merge_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "Merge conflicts detected with ${{ github.base_ref }} branch"
+            echo "merge_success=false" >> $GITHUB_OUTPUT
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
       - name: Determine Target Environment
+        if: steps.merge-base.outputs.merge_success == 'true'
         id: target
         run: |
           if [ "${{ github.base_ref }}" == "main" ]; then
@@ -43,6 +66,7 @@ jobs:
           fi
 
       - name: Pull Latest Theme
+        if: steps.merge-base.outputs.merge_success == 'true'
         env:
           SHOPIFY_FLAG_STORE: ${{ steps.target.outputs.store_url }}
           SHOPIFY_CLI_THEME_TOKEN: ${{ steps.target.outputs.theme_token }}
@@ -50,6 +74,7 @@ jobs:
           shopify theme pull --live --force
 
       - name: Check for Conflicts
+        if: steps.merge-base.outputs.merge_success == 'true'
         id: conflict-check
         run: |
           git add -A
@@ -57,29 +82,18 @@ jobs:
             echo "No theme changes to sync"
             echo "has_conflicts=false" >> $GITHUB_OUTPUT
           else
-            echo "Theme changes detected, checking for conflicts..."
-            # Configure git user for commits
-            git config --global user.email "actions@github.com"
-            git config --global user.name "GitHub Actions Bot"
+            echo "Theme changes detected, committing..."
             git commit -m "Sync: Latest theme changes from ${{ steps.target.outputs.store_url }}"
-            
-            # Try to merge and detect conflicts
-            if git merge origin/${{ github.base_ref }} --no-commit --no-ff; then
-              echo "No conflicts detected"
-              echo "has_conflicts=false" >> $GITHUB_OUTPUT
-              git merge --abort
-            else
-              echo "Conflicts detected!"
-              echo "has_conflicts=true" >> $GITHUB_OUTPUT
-              git merge --abort
-            fi
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Update PR Status
         uses: actions/github-script@v7
         with:
           script: |
-            const hasConflicts = '${{ steps.conflict-check.outputs.has_conflicts }}' === 'true';
+            const mergeSuccess = '${{ steps.merge-base.outputs.merge_success }}' === 'true';
+            const hasConflicts = '${{ steps.merge-base.outputs.has_conflicts }}' === 'true' || 
+                                '${{ steps.conflict-check.outputs.has_conflicts }}' === 'true';
 
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
@@ -87,12 +101,29 @@ jobs:
               sha: context.payload.pull_request.head.sha,
               state: hasConflicts ? 'failure' : 'success',
               description: hasConflicts 
-                ? 'Theme sync conflicts detected' 
+                ? mergeSuccess ? 'Theme sync conflicts detected' : 'Git merge conflicts with base branch'
                 : 'Theme sync check passed',
               context: 'theme-sync-check'
             });
 
-            if (hasConflicts) {
+            if (!mergeSuccess) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '❌ **Git Merge Conflicts Detected**\n\n' +
+                      'This PR has conflicts with the `${{ github.base_ref }}` branch. ' +
+                      'Please resolve the merge conflicts before proceeding.\n\n' +
+                      '```bash\n' +
+                      'git fetch origin ${{ github.base_ref }}\n' +
+                      'git merge origin/${{ github.base_ref }}\n' +
+                      '# Resolve conflicts manually\n' +
+                      'git add .\n' +
+                      'git commit -m "Resolve merge conflicts"\n' +
+                      'git push\n' +
+                      '```'
+              });
+            } else if (hasConflicts) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
