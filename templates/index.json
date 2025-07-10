@@ -33,11 +33,45 @@
         "padding_bottom": 52
       }
     },
-    "image_banner_cx7LKb": {
+    "image_banner_Y8rTnA": {
       "type": "image-banner",
+      "blocks": {
+        "heading_kFyHJF": {
+          "type": "heading",
+          "settings": {
+            "heading": "OCEAN PROD",
+            "heading_size": "h1"
+          }
+        },
+        "text_fyUMmk": {
+          "type": "text",
+          "disabled": true,
+          "settings": {
+            "text": "Stelle Kunden Details zu Banner-Bildern oder Inhalt auf der Vorlage zur Verfügung.",
+            "text_style": "body"
+          }
+        },
+        "buttons_inKwq3": {
+          "type": "buttons",
+          "disabled": true,
+          "settings": {
+            "button_label_1": "Schaltflächenbeschriftung",
+            "button_link_1": "",
+            "button_style_secondary_1": false,
+            "button_label_2": "Schaltflächenbeschriftung",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_kFyHJF",
+        "text_fyUMmk",
+        "buttons_inKwq3"
+      ],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
-        "image": "shopify://shop_images/Screenshot_2024-12-16_at_15.35.57.png",
+        "image": "shopify://shop_images/Ocean.avif",
         "image_overlay_opacity": 0,
         "image_height": "medium",
         "desktop_content_position": "middle-center",
@@ -48,72 +82,6 @@
         "mobile_content_alignment": "center",
         "stack_images_on_mobile": true,
         "show_text_below": true
-      }
-    },
-    "rich_text_pWfF7z": {
-      "type": "rich-text",
-      "blocks": {
-        "heading_F8khDa": {
-          "type": "heading",
-          "settings": {
-            "heading": "Das ist Neu",
-            "heading_size": "h1"
-          }
-        },
-        "text_GprWNq": {
-          "type": "text",
-          "settings": {
-            "text": "<p>So Cool!</p>"
-          }
-        },
-        "button_nQfmMD": {
-          "type": "button",
-          "settings": {
-            "button_label": "Einfach Klicken",
-            "button_link": "",
-            "button_style_secondary": false,
-            "button_label_2": "",
-            "button_link_2": "",
-            "button_style_secondary_2": false
-          }
-        }
-      },
-      "block_order": [
-        "heading_F8khDa",
-        "text_GprWNq",
-        "button_nQfmMD"
-      ],
-      "name": "t:sections.rich-text.presets.name",
-      "settings": {
-        "desktop_content_position": "center",
-        "content_alignment": "center",
-        "color_scheme": "",
-        "full_width": true,
-        "padding_top": 40,
-        "padding_bottom": 52
-      }
-    },
-    "rich_text_code_created": {
-      "type": "rich-text",
-      "blocks": {
-        "heading_code_created": {
-          "type": "heading",
-          "settings": {
-            "heading": "this is a block created in the code",
-            "heading_size": "h2"
-          }
-        }
-      },
-      "block_order": [
-        "heading_code_created"
-      ],
-      "settings": {
-        "desktop_content_position": "center",
-        "content_alignment": "center",
-        "color_scheme": "",
-        "full_width": true,
-        "padding_top": 40,
-        "padding_bottom": 52
       }
     },
     "video_U4J44t": {
@@ -336,9 +304,7 @@
   },
   "order": [
     "rich_text_iy8iBb",
-    "image_banner_cx7LKb",
-    "rich_text_pWfF7z",
-    "rich_text_code_created",
+    "image_banner_Y8rTnA",
     "video_U4J44t",
     "image-with-text",
     "image_banner_MV6YCr",
