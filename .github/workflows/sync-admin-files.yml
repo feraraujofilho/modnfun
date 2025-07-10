@@ -1,0 +1,41 @@
+name: Sync Admin Files
+
+# This workflow syncs Content > Files between Production and Staging
+# Run manually or on schedule
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: "0 2 * * *"
+
+jobs:
+  sync-files:
+    runs-on: ubuntu-latest
+    name: Sync Admin Files
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Download Files from Production
+        env:
+          SHOPIFY_STORE: ${{ secrets.PRODUCTION_STORE }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ACCESS_TOKEN }}
+        run: |
+          node scripts/download-admin-files.js
+
+      - name: Upload Files to Staging
+        env:
+          STAGING_STORE: ${{ secrets.STAGING_STORE }}
+          STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ACCESS_TOKEN }}
+        run: |
+          node scripts/upload-files-to-staging.js shopify-admin-files
+
+      - name: Cleanup
+        run: rm -rf shopify-admin-files
