@@ -1,0 +1,13 @@
+{
+  "name": "shopify-sync-scripts",
+  "version": "1.0.0",
+  "description": "Scripts to sync Shopify Admin files between stores",
+  "scripts": {
+    "download": "node download-admin-files.js",
+    "upload": "node upload-files-to-staging.js",
+    "list": "bash list-admin-files.sh"
+  },
+  "dependencies": {
+    "form-data": "^4.0.0"
+  }
+}

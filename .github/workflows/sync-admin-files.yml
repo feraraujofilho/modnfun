@@ -23,6 +23,12 @@ jobs:
         with:
           node-version: "18"
 
+      - name: Install Dependencies
+        run: |
+          cd scripts
+          npm install
+          cd ..
+
       - name: Download Files from Production
         env:
           SHOPIFY_STORE: ${{ secrets.PRODUCTION_STORE }}

@@ -8,6 +8,7 @@
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { URL } = require("url");
 
 // Configuration
 const config = {
@@ -48,6 +49,14 @@ const fileCreateMutation = `
         id
         alt
         createdAt
+        ... on MediaImage {
+          image {
+            url
+          }
+        }
+        ... on GenericFile {
+          url
+        }
       }
       userErrors {
         field
@@ -58,11 +67,35 @@ const fileCreateMutation = `
 `;
 
 /**
+ * Get MIME type from file extension
+ */
+function getMimeType(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  const mimeTypes = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".pdf": "application/pdf",
+    ".csv": "text/csv",
+    ".avif": "image/avif",
+  };
+  return mimeTypes[ext] || "application/octet-stream";
+}
+
+/**
  * Make GraphQL request
  */
 function makeGraphQLRequest(query, variables = {}) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({ query, variables });
+
+    console.log(
+      `  → GraphQL Request to: https://${config.store}/admin/api/${config.apiVersion}/graphql.json`
+    );
 
     const options = {
       hostname: config.store.replace("https://", "").replace("http://", ""),
@@ -71,7 +104,7 @@ function makeGraphQLRequest(query, variables = {}) {
       headers: {
         "X-Shopify-Access-Token": config.accessToken,
         "Content-Type": "application/json",
-        "Content-Length": data.length,
+        "Content-Length": Buffer.byteLength(data),
       },
     };
 
@@ -82,90 +115,91 @@ function makeGraphQLRequest(query, variables = {}) {
         try {
           const parsed = JSON.parse(responseData);
           if (parsed.errors) {
+            console.error(
+              "  ✗ GraphQL Errors:",
+              JSON.stringify(parsed.errors, null, 2)
+            );
             reject(new Error(JSON.stringify(parsed.errors)));
           } else {
             resolve(parsed.data);
           }
         } catch (e) {
+          console.error("  ✗ Parse Error:", e.message);
+          console.error("  ✗ Response:", responseData);
           reject(e);
         }
       });
     });
 
-    req.on("error", reject);
+    req.on("error", (err) => {
+      console.error("  ✗ Request Error:", err.message);
+      reject(err);
+    });
+
     req.write(data);
     req.end();
   });
 }
 
 /**
- * Upload file to staged URL
+ * Upload file using fetch (requires Node 18+)
  */
-function uploadToStagedUrl(stagedTarget, filePath) {
-  return new Promise((resolve, reject) => {
-    const fileStream = fs.createReadStream(filePath);
-    const fileSize = fs.statSync(filePath).size;
+async function uploadToStagedUrl(stagedTarget, filePath) {
+  try {
+    const FormData = require("form-data");
+    const form = new FormData();
 
-    // Build form data
-    const boundary = "----FormBoundary" + Date.now();
-    let formData = "";
-
-    // Add parameters
+    // Add parameters first
     stagedTarget.parameters.forEach((param) => {
-      formData += `--${boundary}\r\n`;
-      formData += `Content-Disposition: form-data; name="${param.name}"\r\n\r\n`;
-      formData += `${param.value}\r\n`;
+      form.append(param.name, param.value);
     });
 
-    // Add file
-    formData += `--${boundary}\r\n`;
-    formData += `Content-Disposition: form-data; name="file"; filename="${path.basename(
-      filePath
-    )}"\r\n`;
-    formData += `Content-Type: application/octet-stream\r\n\r\n`;
+    // Add file last
+    const fileStream = fs.createReadStream(filePath);
+    form.append("file", fileStream, path.basename(filePath));
 
-    const formDataEnd = `\r\n--${boundary}--\r\n`;
+    console.log(`  → Uploading to: ${stagedTarget.url.substring(0, 50)}...`);
 
-    const url = new URL(stagedTarget.url);
-    const options = {
-      hostname: url.hostname,
-      path: url.pathname + url.search,
-      method: "POST",
-      headers: {
-        "Content-Type": `multipart/form-data; boundary=${boundary}`,
-        "Content-Length":
-          Buffer.byteLength(formData) +
-          fileSize +
-          Buffer.byteLength(formDataEnd),
-      },
-    };
+    return new Promise((resolve, reject) => {
+      const url = new URL(stagedTarget.url);
 
-    const req = https.request(options, (res) => {
-      let responseData = "";
-      res.on("data", (chunk) => (responseData += chunk));
-      res.on("end", () => {
-        if (res.statusCode === 201 || res.statusCode === 200) {
-          resolve(stagedTarget.resourceUrl);
-        } else {
-          reject(
-            new Error(`Upload failed: ${res.statusCode} - ${responseData}`)
-          );
-        }
+      const options = {
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        method: "POST",
+        headers: form.getHeaders(),
+      };
+
+      const req = https.request(options, (res) => {
+        let responseData = "";
+        res.on("data", (chunk) => (responseData += chunk));
+        res.on("end", () => {
+          console.log(`  → Upload response status: ${res.statusCode}`);
+          if (
+            res.statusCode === 201 ||
+            res.statusCode === 200 ||
+            res.statusCode === 204
+          ) {
+            resolve(stagedTarget.resourceUrl);
+          } else {
+            console.error(`  ✗ Upload failed with status ${res.statusCode}`);
+            console.error(`  ✗ Response: ${responseData}`);
+            reject(new Error(`Upload failed: ${res.statusCode}`));
+          }
+        });
       });
+
+      req.on("error", (err) => {
+        console.error("  ✗ Upload request error:", err.message);
+        reject(err);
+      });
+
+      form.pipe(req);
     });
-
-    req.on("error", reject);
-
-    // Write form data
-    req.write(formData);
-
-    // Pipe file
-    fileStream.on("data", (chunk) => req.write(chunk));
-    fileStream.on("end", () => {
-      req.write(formDataEnd);
-      req.end();
-    });
-  });
+  } catch (error) {
+    console.error("  ✗ Upload error:", error.message);
+    throw error;
+  }
 }
 
 /**
@@ -175,9 +209,12 @@ async function uploadFile(filePath, alt = "") {
   try {
     const filename = path.basename(filePath);
     const fileSize = fs.statSync(filePath).size;
+    const mimeType = getMimeType(filename);
 
     console.log(
-      `Uploading: ${filename} (${(fileSize / 1024 / 1024).toFixed(2)} MB)`
+      `Uploading: ${filename} (${(fileSize / 1024 / 1024).toFixed(
+        2
+      )} MB, ${mimeType})`
     );
 
     // Step 1: Create staged upload
@@ -185,31 +222,41 @@ async function uploadFile(filePath, alt = "") {
       input: [
         {
           filename: filename,
-          mimeType: "application/octet-stream",
+          mimeType: mimeType,
           resource: "FILE",
           fileSize: fileSize.toString(),
         },
       ],
     };
 
+    console.log("  → Creating staged upload...");
     const stagedData = await makeGraphQLRequest(
       stagedUploadMutation,
       stagedUploadInput
     );
 
+    if (!stagedData || !stagedData.stagedUploadsCreate) {
+      throw new Error("Invalid staged upload response");
+    }
+
     if (stagedData.stagedUploadsCreate.userErrors.length > 0) {
       throw new Error(
-        JSON.stringify(stagedData.stagedUploadsCreate.userErrors)
+        `Staged upload errors: ${JSON.stringify(
+          stagedData.stagedUploadsCreate.userErrors
+        )}`
       );
     }
 
     const stagedTarget = stagedData.stagedUploadsCreate.stagedTargets[0];
+    console.log("  ✓ Staged upload created");
 
     // Step 2: Upload file to staged URL
+    console.log("  → Uploading file to staged URL...");
     const resourceUrl = await uploadToStagedUrl(stagedTarget, filePath);
-    console.log(`  ✓ Uploaded to staged URL`);
+    console.log("  ✓ File uploaded to staged URL");
 
     // Step 3: Create file in Shopify
+    console.log("  → Creating file in Shopify...");
     const fileCreateInput = {
       files: [
         {
@@ -225,15 +272,42 @@ async function uploadFile(filePath, alt = "") {
       fileCreateInput
     );
 
-    if (fileData.fileCreate.userErrors.length > 0) {
-      throw new Error(JSON.stringify(fileData.fileCreate.userErrors));
+    if (!fileData || !fileData.fileCreate) {
+      throw new Error("Invalid file create response");
     }
 
+    if (fileData.fileCreate.userErrors.length > 0) {
+      throw new Error(
+        `File create errors: ${JSON.stringify(fileData.fileCreate.userErrors)}`
+      );
+    }
+
+    const createdFile = fileData.fileCreate.files[0];
+    const fileUrl =
+      createdFile.image?.url || createdFile.url || "URL not available";
+
     console.log(`  ✓ File created successfully`);
-    return fileData.fileCreate.files[0];
+    console.log(`  → File URL: ${fileUrl}`);
+
+    return createdFile;
   } catch (error) {
     console.error(`  ✗ Error: ${error.message}`);
     throw error;
+  }
+}
+
+/**
+ * Check if form-data is available
+ */
+function checkDependencies() {
+  try {
+    require("form-data");
+    return true;
+  } catch (e) {
+    console.error("\n❌ Missing required dependency: form-data");
+    console.error("Please install it by running:");
+    console.error("  npm install form-data\n");
+    return false;
   }
 }
 
@@ -242,15 +316,32 @@ async function uploadFile(filePath, alt = "") {
  */
 async function main() {
   try {
-    const uploadDir = process.argv[2] || "shopify-admin-files";
-
-    if (!fs.existsSync(uploadDir)) {
-      console.error(`Directory not found: ${uploadDir}`);
-      console.log("\nUsage: node upload-files-to-staging.js [directory]");
+    // Check dependencies
+    if (!checkDependencies()) {
       process.exit(1);
     }
 
-    console.log(`Uploading files from: ${uploadDir}\n`);
+    // Check configuration
+    if (config.accessToken === "your-staging-access-token") {
+      console.error(
+        "\n❌ Error: Please set the STAGING_ACCESS_TOKEN environment variable"
+      );
+      console.error("Example:");
+      console.error('  export STAGING_ACCESS_TOKEN="shpat_xxxxx"');
+      console.error('  export STAGING_STORE="your-store.myshopify.com"\n');
+      process.exit(1);
+    }
+
+    const uploadDir = process.argv[2] || "shopify-admin-files";
+
+    if (!fs.existsSync(uploadDir)) {
+      console.error(`\n❌ Directory not found: ${uploadDir}`);
+      console.log("\nUsage: node upload-files-to-staging.js [directory]\n");
+      process.exit(1);
+    }
+
+    console.log(`\n📤 Uploading files to: ${config.store}`);
+    console.log(`📁 From directory: ${uploadDir}\n`);
 
     // Get all files in directory
     const files = fs
@@ -262,22 +353,31 @@ async function main() {
 
     // Upload each file
     let successCount = 0;
+    const failedFiles = [];
+
     for (let i = 0; i < files.length; i++) {
-      console.log(`[${i + 1}/${files.length}]`);
+      console.log(`\n[${i + 1}/${files.length}]`);
       try {
         await uploadFile(files[i]);
         successCount++;
       } catch (err) {
-        // Continue with next file
+        failedFiles.push({ file: files[i], error: err.message });
       }
-      console.log("");
     }
 
+    console.log(`\n${"=".repeat(60)}`);
     console.log(
       `✅ Upload complete! ${successCount}/${files.length} files uploaded successfully`
     );
+
+    if (failedFiles.length > 0) {
+      console.log(`\n❌ Failed uploads (${failedFiles.length}):`);
+      failedFiles.forEach(({ file, error }) => {
+        console.log(`  - ${path.basename(file)}: ${error}`);
+      });
+    }
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("\n❌ Fatal error:", error.message);
     process.exit(1);
   }
 }
