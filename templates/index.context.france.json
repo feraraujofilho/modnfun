@@ -12,16 +12,5 @@
   "context": {
     "market": "france"
   },
-  "sections": {
-    "rich_text_pWfF7z": {
-      "settings": {},
-      "blocks": {
-        "heading_F8khDa": {
-          "settings": {
-            "heading": "FRENCHHHH"
-          }
-        }
-      }
-    }
-  }
+  "sections": {}
 }
