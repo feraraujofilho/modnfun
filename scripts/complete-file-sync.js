@@ -1,45 +1,39 @@
 #!/usr/bin/env node
 
 /**
- * Complete File Sync
- * This script syncs all Admin files from production to staging
+ * Complete File Sync Script
+ * This script runs the full sync process including URL replacement
  */
 
-const { spawn } = require("child_process");
+const { execSync } = require("child_process");
 
-async function main() {
-  try {
-    console.log("🔄 Admin Files Sync: Production → Staging\n");
+console.log("🚀 Starting Complete File Sync Process\n");
 
-    const child = spawn("node", ["scripts/sync-files-direct.js"], {
-      env: process.env,
-      stdio: "inherit",
-    });
+try {
+  // Step 1: Sync files from production to staging
+  console.log("Step 1: Syncing files from production to staging...");
+  execSync("node sync-files-direct.js", { stdio: "inherit" });
 
-    child.on("close", (code) => {
-      if (code !== 0) {
-        console.error("\n❌ Sync failed with code:", code);
-        process.exit(code);
-      } else {
-        console.log("\n✅ Sync complete!");
-        console.log(
-          "\n💡 Note: Files using shopify:// references will work automatically"
-        );
-        console.log(
-          "   Just make sure to refresh your theme editor if needed.\n"
-        );
-      }
-    });
+  console.log("\n✅ File sync completed!");
 
-    child.on("error", (err) => {
-      console.error("\n❌ Error:", err.message);
-      process.exit(1);
-    });
-  } catch (error) {
-    console.error("\n❌ Error:", error.message);
-    process.exit(1);
-  }
+  // Step 2: Wait a bit for files to be processed
+  console.log("\nStep 2: Waiting for file processing...");
+  console.log("⏳ Waiting 10 seconds for Shopify to process files...");
+  execSync("sleep 10", { stdio: "inherit" });
+
+  // Step 3: Replace shopify:// URLs with CDN URLs
+  console.log("\nStep 3: Replacing shopify:// URLs with CDN URLs...");
+  execSync("node replace-shopify-urls.js", { stdio: "inherit" });
+
+  console.log("\n🎉 Complete sync process finished!");
+  console.log("\n📝 Next steps:");
+  console.log("1. Review the changes made to your theme files");
+  console.log("2. Push the theme changes to Shopify:");
+  console.log("   cd .. && shopify theme push");
+  console.log(
+    "\n💡 Note: The theme push will update your staging theme with the new URLs"
+  );
+} catch (error) {
+  console.error("\n❌ Error during sync process:", error.message);
+  process.exit(1);
 }
-
-// Run the sync
-main();
