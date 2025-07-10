@@ -26,14 +26,14 @@ jobs:
       - name: Download Files from Production
         env:
           SHOPIFY_STORE: ${{ secrets.PRODUCTION_STORE }}
-          SHOPIFY_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ACCESS_TOKEN }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
         run: |
           node scripts/download-admin-files.js
 
       - name: Upload Files to Staging
         env:
           STAGING_STORE: ${{ secrets.STAGING_STORE }}
-          STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ACCESS_TOKEN }}
+          STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
         run: |
           node scripts/upload-files-to-staging.js shopify-admin-files
 
