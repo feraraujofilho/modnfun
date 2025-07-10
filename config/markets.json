@@ -9,7 +9,7 @@
  */
 {
   "markets": {
-    "brazil": {
+    "brazi": {
       "parent": "@default"
     },
     "france": {
