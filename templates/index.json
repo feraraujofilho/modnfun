@@ -20,9 +20,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_yqUFgF"
-      ],
+      "block_order": ["heading_yqUFgF"],
       "name": "t:sections.rich-text.presets.name",
       "settings": {
         "desktop_content_position": "center",
@@ -64,14 +62,10 @@
           }
         }
       },
-      "block_order": [
-        "heading_kFyHJF",
-        "text_fyUMmk",
-        "buttons_inKwq3"
-      ],
+      "block_order": ["heading_kFyHJF", "text_fyUMmk", "buttons_inKwq3"],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
-        "image": "shopify://shop_images/Ocean.avif",
+        "image": "https://cdn.shopify.com/s/files/1/0702/9545/3845/files/Ocean_d2d4e6a7-e4df-4caa-8567-d2e255c59329.jpg?v=1752164463",
         "image_overlay_opacity": 0,
         "image_height": "medium",
         "desktop_content_position": "middle-center",
@@ -118,10 +112,7 @@
           }
         }
       },
-      "block_order": [
-        "heading",
-        "button"
-      ],
+      "block_order": ["heading", "button"],
       "settings": {
         "image": "shopify://shop_images/woman-2564660_1280.jpg",
         "height": "large",
@@ -167,11 +158,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_awRADm",
-        "text_VJxqEt",
-        "buttons_z3a6Jc"
-      ],
+      "block_order": ["heading_awRADm", "text_VJxqEt", "buttons_z3a6Jc"],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
         "image": "shopify://shop_images/knightsbridge-rolex-boutique-square.webp",
@@ -281,11 +268,7 @@
           }
         }
       },
-      "block_order": [
-        "heading_z3R9z8",
-        "text_wV4t68",
-        "button_Cykrrj"
-      ],
+      "block_order": ["heading_z3R9z8", "text_wV4t68", "button_Cykrrj"],
       "settings": {
         "height": "adapt",
         "desktop_image_width": "medium",
