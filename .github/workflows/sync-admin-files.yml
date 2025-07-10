@@ -1,6 +1,7 @@
 name: Sync Admin Files
 
 # This workflow syncs Content > Files between Production and Staging
+# AND updates theme settings to use the new file URLs
 # Run manually or on schedule
 
 on:
@@ -12,7 +13,7 @@ on:
 jobs:
   sync-files:
     runs-on: ubuntu-latest
-    name: Sync Admin Files
+    name: Sync Admin Files and Update Theme
 
     steps:
       - name: Checkout Repository
@@ -23,11 +24,11 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Sync Files from Production to Staging
+      - name: Complete File Sync and Theme Update
         env:
           PRODUCTION_STORE: ${{ secrets.PRODUCTION_STORE }}
           PRODUCTION_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
           STAGING_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
           STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
         run: |
-          node scripts/sync-files-direct.js
+          node scripts/complete-file-sync.js

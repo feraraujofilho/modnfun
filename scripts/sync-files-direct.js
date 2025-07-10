@@ -209,6 +209,7 @@ async function createFileInStaging(fileInfo) {
           alt: fileInfo.alt || fileInfo.filename,
           contentType: fileInfo.type,
           originalSource: fileInfo.url,
+          filename: fileInfo.filename, // Preserve original filename
         },
       ],
     };
@@ -309,6 +310,14 @@ async function syncFiles() {
         console.log(`  - ${filename}: ${error}`);
       });
     }
+
+    console.log("\n💡 Important Notes:");
+    console.log("- Files have been synced with preserved filenames");
+    console.log("- Clear your browser cache and refresh the theme editor");
+    console.log("- If images still don't appear, try:");
+    console.log("  1. Hard refresh (Cmd+Shift+R or Ctrl+Shift+R)");
+    console.log("  2. Open the theme editor in an incognito window");
+    console.log("  3. Wait a few minutes for CDN propagation");
   } catch (error) {
     console.error("\n❌ Fatal error:", error.message);
     process.exit(1);
