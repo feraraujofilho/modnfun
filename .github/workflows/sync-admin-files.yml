@@ -23,25 +23,11 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install Dependencies
-        run: |
-          cd scripts
-          npm install
-          cd ..
-
-      - name: Download Files from Production
+      - name: Sync Files from Production to Staging
         env:
-          SHOPIFY_STORE: ${{ secrets.PRODUCTION_STORE }}
-          SHOPIFY_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
-        run: |
-          node scripts/download-admin-files.js
-
-      - name: Upload Files to Staging
-        env:
+          PRODUCTION_STORE: ${{ secrets.PRODUCTION_STORE }}
+          PRODUCTION_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
           STAGING_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
           STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
         run: |
-          node scripts/upload-files-to-staging.js shopify-admin-files
-
-      - name: Cleanup
-        run: rm -rf shopify-admin-files
+          node scripts/sync-files-direct.js
