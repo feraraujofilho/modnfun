@@ -38,7 +38,7 @@ jobs:
 
       - name: Upload Files to Staging
         env:
-          STAGING_STORE: ${{ secrets.STAGING_STORE }}
+          STAGING_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
           STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
         run: |
           node scripts/upload-files-to-staging.js shopify-admin-files
