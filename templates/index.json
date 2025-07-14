@@ -87,7 +87,7 @@
         "heading": "",
         "heading_size": "h0",
         "enable_video_looping": false,
-        "video": "shopify://files/videos/8296085-hd_1920_1080_25fps.mp4",
+        "video": "shopify://files/videos/the_planet.mp4",
         "video_url": "",
         "description": "",
         "full_width": true,
@@ -352,8 +352,8 @@
   },
   "order": [
     "rich_text_iy8iBb",
-    "image_with_text_rLrqmD",
     "video_U4J44t",
+    "image_with_text_rLrqmD",
     "image_banner_Y8rTnA",
     "image-with-text",
     "image_banner_MV6YCr",
