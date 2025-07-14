@@ -2,7 +2,7 @@
 
 /**
  * Sync Images with Duplicate Check
- * This script syncs images from one store to another, checking for duplicates first
+ * This script syncs image files from one store to another, checking for duplicates first
  */
 
 const https = require("https");
@@ -24,8 +24,8 @@ const config = {
 /**
  * GraphQL query to fetch images from source
  */
-const imagesQuery = `
-  query getImages($cursor: String) {
+const mediaQuery = `
+  query getMedia($cursor: String) {
     files(first: 50, after: $cursor, query: "media_type:IMAGE") {
       edges {
         node {
@@ -153,8 +153,9 @@ function getFilenameFromUrl(url) {
 function getBaseFilename(filename) {
   // Remove extension
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-  // Remove common Shopify size suffixes
-  return nameWithoutExt.replace(/_\d+x\d+$/, "");
+  // Remove common Shopify size suffixes for images
+  let baseName = nameWithoutExt.replace(/_\d+x\d+$/, "");
+  return baseName;
 }
 
 /**
@@ -190,16 +191,19 @@ async function fetchSourceImages(cursor = null) {
     const data = await makeGraphQLRequest(
       config.source.store,
       config.source.accessToken,
-      imagesQuery,
+      mediaQuery,
       { cursor }
     );
 
-    const images = data.files.edges;
+    const mediaFiles = data.files.edges;
 
-    for (const edge of images) {
+    for (const edge of mediaFiles) {
       const node = edge.node;
+
+      // Handle images
       if (node.image) {
         allImages.push({
+          type: "IMAGE",
           url: node.image.url,
           alt: node.alt || "",
           filename: getFilenameFromUrl(node.image.url),
@@ -210,8 +214,8 @@ async function fetchSourceImages(cursor = null) {
     }
 
     // Recursively fetch next page
-    if (data.files.pageInfo.hasNextPage && images.length > 0) {
-      const lastCursor = images[images.length - 1].cursor;
+    if (data.files.pageInfo.hasNextPage && mediaFiles.length > 0) {
+      const lastCursor = mediaFiles[mediaFiles.length - 1].cursor;
       const nextImages = await fetchSourceImages(lastCursor);
       allImages.push(...nextImages);
     }
@@ -251,9 +255,15 @@ async function createImageInTarget(imageInfo) {
     }
 
     const createdFile = data.fileCreate.files[0];
+    let url = "URL not available";
+
+    if (createdFile.image?.url) {
+      url = createdFile.image.url;
+    }
+
     return {
       success: true,
-      url: createdFile.image?.url || "URL not available",
+      url: url,
     };
   } catch (error) {
     return {
@@ -275,7 +285,8 @@ async function syncImages() {
     // Fetch all images from source
     console.log("📥 Fetching images from source store...");
     const sourceImages = await fetchSourceImages();
-    console.log(`📊 Found ${sourceImages.length} images in source\n`);
+
+    console.log(`📊 Found ${sourceImages.length} images\n`);
 
     // Sync each image
     let successCount = 0;
@@ -297,7 +308,10 @@ async function syncImages() {
 
       if (exists) {
         skippedCount++;
-        results.skipped.push(image.filename);
+        results.skipped.push({
+          filename: image.filename,
+          type: "IMAGE",
+        });
         console.log("⏭️  Skipped (already exists)");
       } else {
         const result = await createImageInTarget(image);
@@ -306,6 +320,7 @@ async function syncImages() {
           successCount++;
           results.synced.push({
             filename: image.filename,
+            type: "IMAGE",
             url: result.url,
           });
           console.log("✅ Synced");
@@ -313,6 +328,7 @@ async function syncImages() {
           failureCount++;
           results.failed.push({
             filename: image.filename,
+            type: "IMAGE",
             error: result.error,
           });
           console.log(`❌ Failed: ${result.error}`);
@@ -343,14 +359,19 @@ async function syncImages() {
       );
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
+        `synced_images=${successCount}\n`
+      );
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `synced_videos=0\n`);
+      fs.appendFileSync(
+        process.env.GITHUB_OUTPUT,
         `results=${JSON.stringify(results)}\n`
       );
     }
 
     if (results.failed.length > 0) {
-      console.log("\n❌ Failed images:");
+      console.log("\n❌ Failed files:");
       results.failed.forEach((f) => {
-        console.log(`   - ${f.filename}: ${f.error}`);
+        console.log(`   🖼️ ${f.filename}: ${f.error}`);
       });
     }
 

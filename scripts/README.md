@@ -1,49 +1,73 @@
-# Shopify Admin File Sync Scripts
+# Theme Sync Scripts
 
-This directory contains scripts to sync Admin files (Content > Files) between Shopify stores.
+This directory contains scripts for syncing theme files and assets between Shopify stores.
 
 ## Scripts
 
-### `sync-files-direct.js`
+### sync-files-direct.js
 
-The main sync script that copies files from production to staging using GraphQL API.
+Direct file sync between two Shopify stores. This script:
 
-## Setup
+- Fetches all theme files from source store
+- Compares with target store files
+- Updates only changed files
+- Preserves file structure and content
 
-1. Install dependencies (if not already installed):
+### sync-images-check.js
 
-   ```bash
-   cd scripts
-   npm install
-   ```
+Image sync with duplicate detection. This script:
 
-2. Set environment variables:
-   ```bash
-   export PRODUCTION_STORE="your-production-store.myshopify.com"
-   export PRODUCTION_ACCESS_TOKEN="shpat_xxxxx"
-   export STAGING_STORE="your-staging-store.myshopify.com"
-   export STAGING_ACCESS_TOKEN="shpat_xxxxx"
-   ```
+- Fetches all images from source store
+- Checks for duplicates in target store before syncing
+- Uses filename-based matching to avoid duplicating images with different URLs
+- Provides detailed sync statistics
 
 ## Usage
 
-### Sync files:
+### Direct File Sync
 
 ```bash
-npm run sync
+SOURCE_STORE="source.myshopify.com" \
+SOURCE_ACCESS_TOKEN="your-source-token" \
+TARGET_STORE="target.myshopify.com" \
+TARGET_ACCESS_TOKEN="your-target-token" \
+node sync-files-direct.js
 ```
 
-This will sync all files from production to staging.
+### Image Sync
 
-## Important Notes
+```bash
+SOURCE_STORE="source.myshopify.com" \
+SOURCE_ACCESS_TOKEN="your-source-token" \
+TARGET_STORE="target.myshopify.com" \
+TARGET_ACCESS_TOKEN="your-target-token" \
+node sync-images-check.js
+```
 
-- Files are synced with preserved filenames to maintain compatibility
-- The sync creates copies of files, not references to the same file
-- Each store maintains its own copy of the files
+## Environment Variables
 
-## API Requirements
+- `SOURCE_STORE`: Source Shopify store URL
+- `SOURCE_ACCESS_TOKEN`: Admin API access token for source store
+- `TARGET_STORE`: Target Shopify store URL
+- `TARGET_ACCESS_TOKEN`: Admin API access token for target store
 
-Both stores need access tokens with the following scopes:
+## Features
 
-- Production: `read_files`
-- Staging: `write_files`
+### Image Sync Features
+
+- **Duplicate Detection**: Checks if images already exist before syncing
+- **Smart Filename Matching**: Ignores size suffixes (e.g., \_1024x1024) when checking for duplicates
+- **Batch Processing**: Handles large image libraries efficiently
+- **Progress Tracking**: Real-time status updates during sync
+- **Error Handling**: Continues sync even if individual images fail
+
+## Output
+
+Both scripts provide detailed output including:
+
+- Number of files/images processed
+- Success/skip/failure counts
+- Specific error messages for failed items
+- Summary statistics
+
+For GitHub Actions integration, the scripts also output results in a format compatible with `GITHUB_OUTPUT`.
