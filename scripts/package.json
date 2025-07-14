@@ -1,0 +1,8 @@
+{
+  "name": "shopify-file-sync",
+  "version": "1.0.0",
+  "description": "Sync files between Shopify stores",
+  "scripts": {
+    "sync": "node sync-files-direct.js"
+  }
+}

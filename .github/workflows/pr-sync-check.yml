@@ -1,11 +1,10 @@
-name: PR Theme Sync Workflow
+name: PR Branch Sync Workflow
 
-# This workflow ensures theme synchronization between Production, Staging, and Feature branches
+# This workflow ensures branch synchronization between Main and Staging branches
 # It runs on every PR to staging or main branches and:
-# 1. Pulls the latest production theme
-# 2. Updates the target branch (staging) with production changes
-# 3. Checks for conflicts and handles them appropriately
-# 4. Approves PRs when ready (but doesn't auto-merge)
+# 1. Ensures staging is up-to-date with main
+# 2. Checks for conflicts and handles them appropriately
+# 3. Approves PRs when ready (but doesn't auto-merge)
 
 on:
   pull_request:
@@ -18,14 +17,10 @@ permissions:
   statuses: write
   issues: write
 
-env:
-  # Set to true to enable debug logging
-  DEBUG: false
-
 jobs:
-  theme-sync:
+  branch-sync:
     runs-on: ubuntu-latest
-    name: Theme Sync Check
+    name: Branch Sync Check
 
     steps:
       # Step 1: Setup - Checkout and Configure
@@ -34,22 +29,13 @@ jobs:
         with:
           # We need the full history for proper merging
           fetch-depth: 0
-          # Use a PAT to allow pushing to protected branches
+          # Use GITHUB_TOKEN to allow pushing to branches
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Install Shopify CLI
-        run: npm install -g @shopify/cli @shopify/theme
 
       - name: Configure Git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions Bot"
-          git config --global merge.ours.driver true
 
       # Step 2: Determine PR Type and Set Variables
       - name: Analyze PR Type
@@ -71,128 +57,75 @@ jobs:
             echo "📝 PR Type: Other (not handled by this workflow)"
           fi
 
-      # Step 3: Checkout Target Branch (Staging)
-      - name: Checkout Target Branch
+      # Step 3: Fetch all branches
+      - name: Fetch branches
         if: steps.pr-analysis.outputs.pr_type != 'other'
         run: |
-          # For feature->staging PRs, we need to update staging
-          # For staging->main PRs, we also update staging (not main)
-          if [[ "${{ steps.pr-analysis.outputs.pr_type }}" == "feature_to_staging" ]] || [[ "${{ steps.pr-analysis.outputs.pr_type }}" == "staging_to_main" ]]; then
-            echo "🔄 Checking out staging branch..."
-            git checkout staging
-            git pull origin staging
-          fi
+          echo "🔄 Fetching latest branches..."
+          git fetch origin main:main
+          git fetch origin staging:staging
+          git fetch origin ${{ github.head_ref }}:${{ github.head_ref }}
 
-      # Step 4: Pull Production Theme
-      - name: Pull Production Theme
-        id: pull-production
+      # Step 4: Checkout and update staging branch
+      - name: Update Staging Branch
+        id: update-staging
         if: steps.pr-analysis.outputs.pr_type != 'other'
-        env:
-          SHOPIFY_FLAG_STORE: ${{ secrets.PRODUCTION_STORE }}
-          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.PRODUCTION_THEME_ACCESS_PASSWORD }}
         run: |
-          echo "🏪 Pulling latest theme from production..."
+          echo "🔄 Checking out staging branch..."
+          git checkout staging
 
-          # Pull the entire production theme
-          shopify theme pull --live --force
+          # Check if staging needs updates from main
+          echo "📊 Checking if staging is behind main..."
+          BEHIND_COUNT=$(git rev-list --count staging..main)
 
-          # Check if there are any changes
-          git add -A
-          if git diff --cached --quiet; then
-            echo "✅ No production theme changes detected"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+          if [ "$BEHIND_COUNT" -eq 0 ]; then
+            echo "✅ Staging is already up-to-date with main"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
           else
-            echo "📦 Production theme changes detected"
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📦 Staging is $BEHIND_COUNT commits behind main"
+            echo "needs_update=true" >> $GITHUB_OUTPUT
             
-            # Get list of changed files
-            echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-            git diff --cached --name-only >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            
-            # Count changes
-            echo "change_count=$(git diff --cached --numstat | wc -l)" >> $GITHUB_OUTPUT
-          fi
-
-      # Step 5: Handle Production Changes
-      - name: Process Production Changes
-        id: process-production
-        if: steps.pr-analysis.outputs.pr_type != 'other' && steps.pull-production.outputs.has_changes == 'true'
-        run: |
-          echo "🔄 Processing production theme changes..."
-
-          # Try to commit the changes
-          git commit -m "Sync: Production theme updates $(date +'%Y-%m-%d %H:%M:%S')"
-
-          # Try to push to staging (this might fail if there are conflicts)
-          if git push origin staging 2>&1 | tee push_output.txt; then
-            echo "✅ Successfully pushed production changes to staging"
-            echo "push_success=true" >> $GITHUB_OUTPUT
-            echo "needs_pr=false" >> $GITHUB_OUTPUT
-          else
-            # Check if push failed due to conflicts
-            if grep -q "rejected" push_output.txt; then
-              echo "❌ Push failed - conflicts detected with remote staging"
-              echo "push_success=false" >> $GITHUB_OUTPUT
-              echo "needs_pr=true" >> $GITHUB_OUTPUT
+            # Try to merge main into staging
+            echo "🔄 Attempting to merge main into staging..."
+            if git merge main --no-edit; then
+              echo "✅ Successfully merged main into staging"
+              echo "has_conflicts=false" >> $GITHUB_OUTPUT
               
-              # We'll need to create a PR for these changes
-              echo "📝 Will create a PR for production sync"
+              # Push the updated staging branch
+              if git push origin staging; then
+                echo "✅ Successfully pushed updates to staging"
+                echo "push_success=true" >> $GITHUB_OUTPUT
+              else
+                echo "❌ Failed to push to staging"
+                echo "push_success=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "❌ Merge conflicts detected"
+              echo "has_conflicts=true" >> $GITHUB_OUTPUT
+              
+              # Get conflict details
+              echo "conflict_files<<EOF" >> $GITHUB_OUTPUT
+              git diff --name-only --diff-filter=U >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              
+              # Abort the merge
+              git merge --abort
             fi
           fi
 
-      # Step 6: Create Sync PR if Needed
-      - name: Create Production Sync PR
-        id: create-sync-pr
-        if: steps.process-production.outputs.needs_pr == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const timestamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
-            const branchName = `sync-production-${Date.now()}`;
-
-            // Create a new branch for the sync
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/heads/${branchName}`,
-              sha: context.sha
-            });
-
-            // Create PR
-            const { data: pr } = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🔄 Sync: Production theme updates - ${timestamp}`,
-              body: `## Production Theme Sync Required\n\n` +
-                    `This PR contains theme changes from production that need to be merged into staging.\n\n` +
-                    `### Changed Files\n` +
-                    `\`\`\`\n${{ steps.pull-production.outputs.changed_files }}\`\`\`\n\n` +
-                    `### Next Steps\n` +
-                    `1. Review the production changes\n` +
-                    `2. Resolve any conflicts if present\n` +
-                    `3. Merge this PR into staging\n` +
-                    `4. Then retry your original PR\n\n` +
-                    `⚠️ **Important**: Your original PR (#${{ steps.pr-analysis.outputs.pr_number }}) is blocked until this sync is complete.`,
-              head: branchName,
-              base: 'staging'
-            });
-
-            core.setOutput('sync_pr_number', pr.number);
-            core.setOutput('sync_pr_url', pr.html_url);
-
-      # Step 7: Check Feature Branch Conflicts (only for feature->staging)
-      - name: Check Feature Branch Merge Conflicts
+      # Step 5: Check PR merge conflicts (for feature->staging)
+      - name: Check Feature Branch Conflicts
         id: check-feature-conflicts
-        if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.process-production.outputs.needs_pr != 'true'
+        if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
         run: |
-          echo "🔍 Checking for conflicts between feature branch and updated staging..."
+          echo "🔍 Checking for conflicts between feature branch and staging..."
 
-          # Fetch the feature branch
-          git fetch origin ${{ steps.pr-analysis.outputs.source_branch }}
+          # Make sure we're on staging
+          git checkout staging
 
-          # Try to merge the feature branch into staging (dry run)
-          if git merge --no-commit --no-ff origin/${{ steps.pr-analysis.outputs.source_branch }}; then
+          # Try to merge the feature branch (dry run)
+          if git merge --no-commit --no-ff ${{ github.head_ref }}; then
             echo "✅ No conflicts detected between feature and staging"
             echo "has_conflicts=false" >> $GITHUB_OUTPUT
             # Abort the merge since this was just a test
@@ -210,38 +143,47 @@ jobs:
             git merge --abort || true
           fi
 
-      # Step 8: Update PR Status and Comment
+      # Step 6: Update PR Status and Comment
       - name: Update PR Status
         if: always() && steps.pr-analysis.outputs.pr_type != 'other'
         uses: actions/github-script@v7
         with:
           script: |
             const prType = '${{ steps.pr-analysis.outputs.pr_type }}';
-            const hasProductionChanges = '${{ steps.pull-production.outputs.has_changes }}' === 'true';
-            const productionSyncNeeded = '${{ steps.process-production.outputs.needs_pr }}' === 'true';
+            const needsUpdate = '${{ steps.update-staging.outputs.needs_update }}' === 'true';
+            const hasStagingConflicts = '${{ steps.update-staging.outputs.has_conflicts }}' === 'true';
             const hasFeatureConflicts = '${{ steps.check-feature-conflicts.outputs.has_conflicts }}' === 'true';
-            const syncPrNumber = '${{ steps.create-sync-pr.outputs.sync_pr_number }}';
-            const syncPrUrl = '${{ steps.create-sync-pr.outputs.sync_pr_url }}';
+            const pushSuccess = '${{ steps.update-staging.outputs.push_success }}' === 'true';
 
             let state = 'success';
             let description = '';
             let commentBody = '';
 
             // Determine status based on workflow results
-            if (productionSyncNeeded) {
+            if (hasStagingConflicts) {
               state = 'failure';
-              description = 'Production sync required';
-              commentBody = `❌ **Production Sync Required**\n\n` +
-                `A separate PR has been created to sync production theme changes: #${syncPrNumber}\n\n` +
-                `**Next Steps:**\n` +
-                `1. Review and merge the [sync PR](${syncPrUrl})\n` +
-                `2. Once merged, re-run the checks on this PR\n\n` +
-                `This PR is blocked until the production sync is complete.`;
+              description = 'Staging has conflicts with main';
+              commentBody = `❌ **Manual Intervention Required**\n\n` +
+                `The staging branch has merge conflicts with main that must be resolved manually.\n\n` +
+                `**Conflicting files:**\n` +
+                `\`\`\`\n${{ steps.update-staging.outputs.conflict_files }}\`\`\`\n\n` +
+                `**To resolve:**\n` +
+                `\`\`\`bash\n` +
+                `# Checkout staging branch\n` +
+                `git checkout staging\n` +
+                `git pull origin staging\n` +
+                `git pull origin main\n` +
+                `# Resolve conflicts in your editor\n` +
+                `git add .\n` +
+                `git commit -m "Resolve merge conflicts with main"\n` +
+                `git push origin staging\n` +
+                `\`\`\`\n\n` +
+                `After resolving conflicts, re-run the workflow on this PR.`;
             } else if (hasFeatureConflicts && prType === 'feature_to_staging') {
               state = 'failure';
-              description = 'Merge conflicts detected';
+              description = 'Feature branch has conflicts with staging';
               commentBody = `❌ **Merge Conflicts Detected**\n\n` +
-                `Your feature branch has conflicts with the staging branch.\n\n` +
+                `Your feature branch has conflicts with the updated staging branch.\n\n` +
                 `**Conflicting files:**\n` +
                 `\`\`\`\n${{ steps.check-feature-conflicts.outputs.conflict_files }}\`\`\`\n\n` +
                 `**To resolve:**\n` +
@@ -254,22 +196,29 @@ jobs:
                 `git commit -m "Resolve merge conflicts with staging"\n` +
                 `git push\n` +
                 `\`\`\``;
-            } else if (hasProductionChanges) {
+            } else if (needsUpdate && pushSuccess) {
               state = 'success';
-              description = 'Ready to merge (production synced)';
+              description = 'Ready to merge (staging updated)';
               commentBody = `✅ **Ready to Merge**\n\n` +
-                `Production theme changes have been successfully synced to staging.\n\n` +
-                `**Synced files:**\n` +
-                `\`\`\`\n${{ steps.pull-production.outputs.changed_files }}\`\`\`\n\n` +
-                `Your PR has been approved and is ready to merge.`;
-            } else {
-              state = 'success';
-              description = 'Ready to merge';
-              commentBody = `✅ **All Checks Passed**\n\n` +
-                `- ✅ No production theme changes needed\n` +
+                `The staging branch has been successfully updated with the latest changes from main.\n\n` +
+                `- ✅ Staging synchronized with main\n` +
                 `- ✅ No merge conflicts detected\n` +
-                `- ✅ Ready to merge\n\n` +
-                `Your PR has been approved.`;
+                `- ✅ PR approved\n\n` +
+                `This PR is ready to be merged when you're ready.`;
+            } else if (!needsUpdate) {
+              state = 'success';
+              description = 'Ready to merge (already up-to-date)';
+              commentBody = `✅ **Ready to Merge**\n\n` +
+                `The staging branch is already up-to-date with main.\n\n` +
+                `- ✅ No synchronization needed\n` +
+                `- ✅ No merge conflicts detected\n` +
+                `- ✅ PR approved\n\n` +
+                `This PR is ready to be merged when you're ready.`;
+            } else {
+              state = 'failure';
+              description = 'Failed to update staging';
+              commentBody = `❌ **Update Failed**\n\n` +
+                `Failed to push updates to the staging branch. Please check branch protection rules or permissions.`;
             }
 
             // Update commit status
@@ -279,16 +228,40 @@ jobs:
               sha: context.payload.pull_request.head.sha,
               state: state,
               description: description,
-              context: 'theme-sync-check'
+              context: 'branch-sync-check'
             });
 
-            // Add comment to PR
-            await github.rest.issues.createComment({
+            // Find existing bot comments
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ steps.pr-analysis.outputs.pr_number }},
-              body: commentBody
+              issue_number: ${{ steps.pr-analysis.outputs.pr_number }}
             });
+
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('Branch Sync Check')
+            );
+
+            commentBody = `## 🔄 Branch Sync Check\n\n${commentBody}`;
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.pr-analysis.outputs.pr_number }},
+                body: commentBody
+              });
+            }
 
             // Approve PR if everything is good
             if (state === 'success') {
@@ -298,14 +271,14 @@ jobs:
                   repo: context.repo.repo,
                   pull_number: ${{ steps.pr-analysis.outputs.pr_number }},
                   event: 'APPROVE',
-                  body: 'Automated approval: All theme sync checks passed.'
+                  body: 'Automated approval: All branch sync checks passed.'
                 });
               } catch (error) {
                 console.log('Could not auto-approve (might be PR author):', error.message);
               }
             }
 
-      # Step 9: Summary Output
+      # Step 7: Summary Output
       - name: Workflow Summary
         if: always()
         run: |
@@ -314,10 +287,19 @@ jobs:
           echo "- **PR Type**: ${{ steps.pr-analysis.outputs.pr_type }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Source Branch**: ${{ steps.pr-analysis.outputs.source_branch }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Target Branch**: ${{ steps.pr-analysis.outputs.target_branch }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production Changes**: ${{ steps.pull-production.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ steps.pull-production.outputs.has_changes }}" == "true" ]]; then
-            echo "- **Changed Files**: ${{ steps.pull-production.outputs.change_count }}" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [[ "${{ steps.process-production.outputs.needs_pr }}" == "true" ]]; then
-            echo "- **Sync PR Created**: #${{ steps.create-sync-pr.outputs.sync_pr_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Staging needed update**: ${{ steps.update-staging.outputs.needs_update }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Conflicts detected**: ${{ steps.update-staging.outputs.has_conflicts || steps.check-feature-conflicts.outputs.has_conflicts }}" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.update-staging.outputs.has_conflicts }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+            echo "Manual conflict resolution needed in staging branch" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ steps.check-feature-conflicts.outputs.has_conflicts }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+            echo "Manual conflict resolution needed in feature branch" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ✅ Ready to Merge" >> $GITHUB_STEP_SUMMARY
+            echo "All checks passed. PR can be merged when ready." >> $GITHUB_STEP_SUMMARY
           fi
