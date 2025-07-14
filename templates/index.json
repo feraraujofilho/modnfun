@@ -65,7 +65,7 @@
       "block_order": ["heading_kFyHJF", "text_fyUMmk", "buttons_inKwq3"],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
-        "image": "https://cdn.shopify.com/s/files/1/0702/9545/3845/files/Ocean_d2d4e6a7-e4df-4caa-8567-d2e255c59329.jpg?v=1752164463",
+        "image": "shopify://shop_images/Ocean.jpg",
         "image_overlay_opacity": 0,
         "image_height": "medium",
         "desktop_content_position": "middle-center",

@@ -1,7 +1,6 @@
 name: Sync Admin Files
 
 # This workflow syncs Content > Files between Production and Staging
-# AND replaces shopify:// URLs with direct CDN URLs in theme files
 # Run manually or on schedule
 
 on:
@@ -13,27 +12,16 @@ on:
 jobs:
   sync-files:
     runs-on: ubuntu-latest
-    name: Sync Admin Files and Update Theme
+    name: Sync Admin Files
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          # Use PAT to allow pushing changes
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
-      - name: Install Shopify CLI
-        run: npm install -g @shopify/cli @shopify/theme
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions Bot"
 
       - name: Sync Admin Files
         env:
@@ -46,59 +34,11 @@ jobs:
           cd scripts
           node sync-files-direct.js
 
-      - name: Wait for File Processing
-        run: |
-          echo "⏳ Waiting 30 seconds for Shopify to process files..."
-          sleep 30
-
-      - name: Replace Shopify URLs with CDN URLs
-        env:
-          STAGING_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
-          STAGING_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
-        run: |
-          echo "🔄 Replacing shopify:// URLs with CDN URLs..."
-          cd scripts
-          node replace-shopify-urls.js
-
-      - name: Check for Theme Changes
-        id: check-changes
-        run: |
-          if git diff --quiet; then
-            echo "No theme changes detected"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "Theme changes detected"
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            git add -A
-            git status
-          fi
-
-      - name: Commit Theme Changes
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: |
-          git commit -m "Update theme file references after admin files sync [skip ci]"
-          git push
-
-      - name: Push Theme to Staging
-        if: steps.check-changes.outputs.has_changes == 'true'
-        env:
-          SHOPIFY_FLAG_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
-          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.STAGING_THEME_ACCESS_PASSWORD }}
-        run: |
-          echo "📤 Pushing theme changes to staging..."
-          shopify theme push --live --force
-
       - name: Summary
         if: always()
         run: |
           echo "## 📊 Sync Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Admin Files**: Synced from production to staging" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" ]]; then
-            echo "- **Theme Files**: Updated with direct CDN URLs" >> $GITHUB_STEP_SUMMARY
-            echo "- **Theme Push**: Completed to staging" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Theme Files**: No shopify:// URLs found to replace" >> $GITHUB_STEP_SUMMARY
-          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Workflow completed successfully!" >> $GITHUB_STEP_SUMMARY

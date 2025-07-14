@@ -13,12 +13,12 @@ const config = {
     store:
       process.env.PRODUCTION_STORE || "your-production-store.myshopify.com",
     accessToken:
-      process.env.PRODUCTION_ACCESS_TOKEN || "your-production-access-token",
+      process.env.PRODUCTION_ADMIN_API_TOKEN || "your-production-access-token",
   },
   staging: {
-    store: process.env.STAGING_STORE || "your-staging-store.myshopify.com",
+    store: process.env.SHOPIFY_FLAG_STORE || "your-staging-store.myshopify.com",
     accessToken:
-      process.env.STAGING_ACCESS_TOKEN || "your-staging-access-token",
+      process.env.STAGING_ADMIN_API_TOKEN || "your-staging-access-token",
   },
   apiVersion: "2025-01",
 };
@@ -77,6 +77,11 @@ const fileCreateMutation = `
         }
         ... on GenericFile {
           url
+        }
+        ... on Video {
+          sources {
+            url
+          }
         }
       }
       userErrors {
@@ -203,13 +208,25 @@ async function fetchProductionFiles(cursor = null) {
  */
 async function createFileInStaging(fileInfo) {
   try {
+    // Determine the correct contentType based on file extension
+    let contentType = fileInfo.type;
+
+    // For images, always use IMAGE regardless of specific format
+    if (fileInfo.type === "IMAGE") {
+      contentType = "IMAGE";
+    } else if (fileInfo.type === "VIDEO") {
+      contentType = "VIDEO";
+    } else {
+      contentType = "FILE";
+    }
+
     const fileCreateInput = {
       files: [
         {
           alt: fileInfo.alt || fileInfo.filename,
-          contentType: fileInfo.type,
+          contentType: contentType,
           originalSource: fileInfo.url,
-          filename: fileInfo.filename, // Preserve original filename
+          filename: fileInfo.filename, // This preserves the original filename with extension
         },
       ],
     };
@@ -227,7 +244,10 @@ async function createFileInStaging(fileInfo) {
 
     const createdFile = data.fileCreate.files[0];
     const newUrl =
-      createdFile.image?.url || createdFile.url || "URL not available";
+      createdFile.image?.url ||
+      createdFile.url ||
+      (createdFile.sources && createdFile.sources[0]?.url) ||
+      "URL not available";
 
     return {
       success: true,
@@ -269,57 +289,58 @@ async function syncFiles() {
 
     // Fetch all files from production
     const productionFiles = await fetchProductionFiles();
-    console.log(`\n✅ Found ${productionFiles.length} files in production\n`);
+    console.log(`📊 Found ${productionFiles.length} files in production\n`);
 
-    // Sync each file to staging
+    // Sync each file
     let successCount = 0;
+    let failureCount = 0;
     const failedFiles = [];
 
-    for (let i = 0; i < productionFiles.length; i++) {
-      const file = productionFiles[i];
-      const progress = `[${i + 1}/${productionFiles.length}]`;
+    console.log("📤 Starting file sync...\n");
 
-      process.stdout.write(`${progress} ${file.filename} (${file.type})... `);
+    for (const file of productionFiles) {
+      console.log(`📄 Syncing: ${file.filename}`);
+      console.log(`   Type: ${file.type}`);
+      console.log(`   Original URL: ${file.url}`);
 
       const result = await createFileInStaging(file);
 
       if (result.success) {
-        console.log("✅");
         successCount++;
-      } else {
-        console.log("❌");
-        failedFiles.push({
-          filename: file.filename,
-          error: result.error,
-        });
-      }
+        console.log(`   ✅ Success`);
+        console.log(`   New URL: ${result.url}`);
 
-      // Small delay to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 100));
+        // Check if file extension changed
+        const originalExt = file.filename.split(".").pop().toLowerCase();
+        const newFilename = result.url.split("/").pop().split("?")[0];
+        const newExt = newFilename.split(".").pop().toLowerCase();
+
+        if (originalExt !== newExt) {
+          console.log(`   ⚠️  Format changed: ${originalExt} → ${newExt}`);
+        }
+      } else {
+        failureCount++;
+        failedFiles.push({ filename: file.filename, error: result.error });
+        console.log(`   ❌ Failed: ${result.error}`);
+      }
+      console.log("");
     }
 
     // Summary
-    console.log(`\n${"=".repeat(60)}`);
-    console.log(
-      `✅ Sync complete! ${successCount}/${productionFiles.length} files synced successfully`
-    );
+    console.log("\n📊 Sync Summary:");
+    console.log(`✅ Successfully synced: ${successCount} files`);
+    console.log(`❌ Failed: ${failureCount} files`);
 
     if (failedFiles.length > 0) {
-      console.log(`\n❌ Failed files (${failedFiles.length}):`);
-      failedFiles.forEach(({ filename, error }) => {
-        console.log(`  - ${filename}: ${error}`);
+      console.log("\n❌ Failed files:");
+      failedFiles.forEach((f) => {
+        console.log(`   - ${f.filename}: ${f.error}`);
       });
     }
 
-    console.log("\n💡 Important Notes:");
-    console.log("- Files have been synced with preserved filenames");
-    console.log("- Clear your browser cache and refresh the theme editor");
-    console.log("- If images still don't appear, try:");
-    console.log("  1. Hard refresh (Cmd+Shift+R or Ctrl+Shift+R)");
-    console.log("  2. Open the theme editor in an incognito window");
-    console.log("  3. Wait a few minutes for CDN propagation");
+    console.log("\n✨ Sync complete!");
   } catch (error) {
-    console.error("\n❌ Fatal error:", error.message);
+    console.error("\n❌ Sync failed:", error.message);
     process.exit(1);
   }
 }

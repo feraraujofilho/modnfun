@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Sync files between Shopify stores",
   "scripts": {
-    "sync": "node sync-files-direct.js",
-    "complete-sync": "node complete-file-sync.js",
-    "debug": "node debug-file-references.js",
-    "get-urls": "node get-file-urls.js",
-    "replace-urls": "node replace-shopify-urls.js"
+    "sync": "node sync-files-direct.js"
   }
 }
