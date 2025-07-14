@@ -3,7 +3,7 @@ name: PR Branch Sync Workflow
 # This workflow ensures branch synchronization between Main and Staging branches
 # It runs on every PR to staging or main branches and:
 # 1. Ensures staging is up-to-date with main
-# 2. Syncs images from production to staging (avoiding duplicates)
+# 2. Syncs media files (images & videos) from production to staging (avoiding duplicates)
 # 3. Checks for conflicts and handles them appropriately
 # 4. Approves PRs when ready (but doesn't auto-merge)
 
@@ -115,16 +115,16 @@ jobs:
             fi
           fi
 
-      # Step 5: Setup Node.js for image sync
+      # Step 5: Setup Node.js for media sync
       - name: Setup Node.js
         if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      # Step 6: Sync Images from Production to Staging
-      - name: Sync Images
-        id: sync-images
+      # Step 6: Sync Media Files from Production to Staging
+      - name: Sync Media Files
+        id: sync-media
         if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
         env:
           SOURCE_STORE: ${{ secrets.PRODUCTION_STORE }}
@@ -132,7 +132,7 @@ jobs:
           TARGET_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
           TARGET_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
         run: |
-          echo "🖼️ Starting image sync from production to staging..."
+          echo "🎬 Starting media sync from production to staging..."
           cd scripts
           node sync-images-check.js
 
@@ -177,11 +177,13 @@ jobs:
             const hasFeatureConflicts = '${{ steps.check-feature-conflicts.outputs.has_conflicts }}' === 'true';
             const pushSuccess = '${{ steps.update-staging.outputs.push_success }}' === 'true';
 
-            // Image sync results
-            const imageSyncRun = '${{ steps.sync-images.outcome }}' === 'success';
-            const syncedCount = '${{ steps.sync-images.outputs.synced_count }}' || '0';
-            const skippedCount = '${{ steps.sync-images.outputs.skipped_count }}' || '0';
-            const failedCount = '${{ steps.sync-images.outputs.failed_count }}' || '0';
+            // Media sync results
+            const mediaSyncRun = '${{ steps.sync-media.outcome }}' === 'success';
+            const syncedCount = '${{ steps.sync-media.outputs.synced_count }}' || '0';
+            const skippedCount = '${{ steps.sync-media.outputs.skipped_count }}' || '0';
+            const failedCount = '${{ steps.sync-media.outputs.failed_count }}' || '0';
+            const syncedImages = '${{ steps.sync-media.outputs.synced_images }}' || '0';
+            const syncedVideos = '${{ steps.sync-media.outputs.synced_videos }}' || '0';
 
             let state = 'success';
             let description = '';
@@ -228,37 +230,41 @@ jobs:
               state = 'success';
               description = 'Ready to merge (staging updated)';
               
-              let imageSyncInfo = '';
-              if (prType === 'feature_to_staging' && imageSyncRun) {
-                imageSyncInfo = `\n\n**📸 Image Sync Results:**\n` +
-                  `- ✅ Synced: ${syncedCount} images\n` +
-                  `- ⏭️ Skipped (already exist): ${skippedCount} images\n` +
-                  `- ❌ Failed: ${failedCount} images`;
+              let mediaSyncInfo = '';
+              if (prType === 'feature_to_staging' && mediaSyncRun) {
+                mediaSyncInfo = `\n\n**🎬 Media Sync Results:**\n` +
+                  `- ✅ Total synced: ${syncedCount} files\n` +
+                  `  - 🖼️ Images: ${syncedImages}\n` +
+                  `  - 🎬 Videos: ${syncedVideos}\n` +
+                  `- ⏭️ Skipped (already exist): ${skippedCount} files\n` +
+                  `- ❌ Failed: ${failedCount} files`;
               }
               
               commentBody = `✅ **Ready to Merge**\n\n` +
                 `The staging branch has been successfully updated with the latest changes from main.\n\n` +
                 `- ✅ Staging synchronized with main\n` +
                 `- ✅ No merge conflicts detected\n` +
-                `- ✅ PR approved${imageSyncInfo}\n\n` +
+                `- ✅ PR approved${mediaSyncInfo}\n\n` +
                 `This PR is ready to be merged when you're ready.`;
             } else if (!needsUpdate) {
               state = 'success';
               description = 'Ready to merge (already up-to-date)';
               
-              let imageSyncInfo = '';
-              if (prType === 'feature_to_staging' && imageSyncRun) {
-                imageSyncInfo = `\n\n**📸 Image Sync Results:**\n` +
-                  `- ✅ Synced: ${syncedCount} images\n` +
-                  `- ⏭️ Skipped (already exist): ${skippedCount} images\n` +
-                  `- ❌ Failed: ${failedCount} images`;
+              let mediaSyncInfo = '';
+              if (prType === 'feature_to_staging' && mediaSyncRun) {
+                mediaSyncInfo = `\n\n**🎬 Media Sync Results:**\n` +
+                  `- ✅ Total synced: ${syncedCount} files\n` +
+                  `  - 🖼️ Images: ${syncedImages}\n` +
+                  `  - 🎬 Videos: ${syncedVideos}\n` +
+                  `- ⏭️ Skipped (already exist): ${skippedCount} files\n` +
+                  `- ❌ Failed: ${failedCount} files`;
               }
               
               commentBody = `✅ **Ready to Merge**\n\n` +
                 `The staging branch is already up-to-date with main.\n\n` +
                 `- ✅ No synchronization needed\n` +
                 `- ✅ No merge conflicts detected\n` +
-                `- ✅ PR approved${imageSyncInfo}\n\n` +
+                `- ✅ PR approved${mediaSyncInfo}\n\n` +
                 `This PR is ready to be merged when you're ready.`;
             } else {
               state = 'failure';
@@ -336,12 +342,14 @@ jobs:
           echo "- **Staging needed update**: ${{ steps.update-staging.outputs.needs_update }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Conflicts detected**: ${{ steps.update-staging.outputs.has_conflicts || steps.check-feature-conflicts.outputs.has_conflicts }}" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ steps.pr-analysis.outputs.pr_type }}" == "feature_to_staging" ]] && [[ "${{ steps.sync-images.outcome }}" == "success" ]]; then
+          if [[ "${{ steps.pr-analysis.outputs.pr_type }}" == "feature_to_staging" ]] && [[ "${{ steps.sync-media.outcome }}" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🖼️ Image Sync Results" >> $GITHUB_STEP_SUMMARY
-            echo "- **Synced**: ${{ steps.sync-images.outputs.synced_count }} images" >> $GITHUB_STEP_SUMMARY
-            echo "- **Skipped**: ${{ steps.sync-images.outputs.skipped_count }} images (already exist)" >> $GITHUB_STEP_SUMMARY
-            echo "- **Failed**: ${{ steps.sync-images.outputs.failed_count }} images" >> $GITHUB_STEP_SUMMARY
+            echo "### 🎬 Media Sync Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Total synced**: ${{ steps.sync-media.outputs.synced_count }} files" >> $GITHUB_STEP_SUMMARY
+            echo "  - 🖼️ **Images**: ${{ steps.sync-media.outputs.synced_images }}" >> $GITHUB_STEP_SUMMARY
+            echo "  - 🎬 **Videos**: ${{ steps.sync-media.outputs.synced_videos }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Skipped**: ${{ steps.sync-media.outputs.skipped_count }} files (already exist)" >> $GITHUB_STEP_SUMMARY
+            echo "- **Failed**: ${{ steps.sync-media.outputs.failed_count }} files" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [[ "${{ steps.update-staging.outputs.has_conflicts }}" == "true" ]]; then
