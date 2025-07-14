@@ -20,7 +20,9 @@
           }
         }
       },
-      "block_order": ["heading_yqUFgF"],
+      "block_order": [
+        "heading_yqUFgF"
+      ],
       "name": "t:sections.rich-text.presets.name",
       "settings": {
         "desktop_content_position": "center",
@@ -29,6 +31,54 @@
         "full_width": true,
         "padding_top": 40,
         "padding_bottom": 52
+      }
+    },
+    "image_with_text_rLrqmD": {
+      "type": "image-with-text",
+      "blocks": {
+        "heading_rhWAh7": {
+          "type": "heading",
+          "settings": {
+            "heading": "Extra Block To try flow",
+            "heading_size": "h1"
+          }
+        },
+        "text_4C7xTT": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Kombiniere Text mit einem Bild, um den Fokus auf dein Produkt, deine Kollektion oder deinen Blog-Beitrag zu richten. Du kannst außerdem weitere Details über die Verfügbarkeit oder den Stil und sogar eine Bewertung hinzufügen.</p>",
+            "text_style": "body"
+          }
+        },
+        "button_MeV3qp": {
+          "type": "button",
+          "settings": {
+            "button_label": "Schaltflächenbeschriftung",
+            "button_link": "",
+            "button_style_secondary": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_rhWAh7",
+        "text_4C7xTT",
+        "button_MeV3qp"
+      ],
+      "name": "t:sections.image-with-text.presets.name",
+      "settings": {
+        "image": "shopify://shop_images/Gorgosaurus_BW_transparent.png",
+        "height": "adapt",
+        "desktop_image_width": "medium",
+        "layout": "image_first",
+        "desktop_content_position": "top",
+        "desktop_content_alignment": "left",
+        "content_layout": "no-overlap",
+        "section_color_scheme": "",
+        "color_scheme": "",
+        "image_behavior": "none",
+        "mobile_content_alignment": "left",
+        "padding_top": 36,
+        "padding_bottom": 36
       }
     },
     "video_U4J44t": {
@@ -77,7 +127,11 @@
           }
         }
       },
-      "block_order": ["heading_kFyHJF", "text_fyUMmk", "buttons_inKwq3"],
+      "block_order": [
+        "heading_kFyHJF",
+        "text_fyUMmk",
+        "buttons_inKwq3"
+      ],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
         "image": "shopify://shop_images/Ocean.avif",
@@ -112,7 +166,10 @@
           }
         }
       },
-      "block_order": ["heading", "button"],
+      "block_order": [
+        "heading",
+        "button"
+      ],
       "settings": {
         "image": "shopify://shop_images/woman-2564660_1280.jpg",
         "height": "large",
@@ -158,7 +215,11 @@
           }
         }
       },
-      "block_order": ["heading_awRADm", "text_VJxqEt", "buttons_z3a6Jc"],
+      "block_order": [
+        "heading_awRADm",
+        "text_VJxqEt",
+        "buttons_z3a6Jc"
+      ],
       "name": "t:sections.image-banner.presets.name",
       "settings": {
         "image": "shopify://shop_images/knightsbridge-rolex-boutique-square.webp",
@@ -268,7 +329,11 @@
           }
         }
       },
-      "block_order": ["heading_z3R9z8", "text_wV4t68", "button_Cykrrj"],
+      "block_order": [
+        "heading_z3R9z8",
+        "text_wV4t68",
+        "button_Cykrrj"
+      ],
       "settings": {
         "height": "adapt",
         "desktop_image_width": "medium",
@@ -287,6 +352,7 @@
   },
   "order": [
     "rich_text_iy8iBb",
+    "image_with_text_rLrqmD",
     "video_U4J44t",
     "image_banner_Y8rTnA",
     "image-with-text",
