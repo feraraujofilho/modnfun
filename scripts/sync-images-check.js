@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Sync Images and Videos with Duplicate Check
- * This script syncs media files (images and videos) from one store to another, checking for duplicates first
+ * Sync Images with Duplicate Check
+ * This script syncs image files from one store to another, checking for duplicates first
  */
 
 const https = require("https");
@@ -22,11 +22,11 @@ const config = {
 };
 
 /**
- * GraphQL query to fetch images and videos from source
+ * GraphQL query to fetch images from source
  */
 const mediaQuery = `
   query getMedia($cursor: String) {
-    files(first: 50, after: $cursor, query: "media_type:IMAGE OR media_type:VIDEO") {
+    files(first: 50, after: $cursor, query: "media_type:IMAGE") {
       edges {
         node {
           alt
@@ -37,17 +37,6 @@ const mediaQuery = `
               url
               width
               height
-            }
-          }
-          ... on Video {
-            id
-            originalSource {
-              url
-            }
-            sources {
-              url
-              format
-              mimeType
             }
           }
         }
@@ -74,12 +63,6 @@ const checkFileExistsQuery = `
               url
             }
           }
-          ... on Video {
-            id
-            originalSource {
-              url
-            }
-          }
         }
       }
     }
@@ -97,14 +80,6 @@ const fileCreateMutation = `
         alt
         ... on MediaImage {
           image {
-            url
-          }
-        }
-        ... on Video {
-          originalSource {
-            url
-          }
-          sources {
             url
           }
         }
@@ -174,22 +149,19 @@ function getFilenameFromUrl(url) {
 /**
  * Extract base filename without extension and size suffix
  * e.g., "product-image_1024x1024.jpg" -> "product-image"
- * e.g., "product-video_hd.mp4" -> "product-video"
  */
 function getBaseFilename(filename) {
   // Remove extension
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
   // Remove common Shopify size suffixes for images
   let baseName = nameWithoutExt.replace(/_\d+x\d+$/, "");
-  // Remove common video quality suffixes
-  baseName = baseName.replace(/_(hd|sd|720p|1080p|4k)$/i, "");
   return baseName;
 }
 
 /**
- * Check if media file exists in target store
+ * Check if image exists in target store
  */
-async function checkMediaExists(filename) {
+async function checkImageExists(filename) {
   try {
     const baseFilename = getBaseFilename(filename);
     // Search for files with similar names
@@ -204,16 +176,16 @@ async function checkMediaExists(filename) {
 
     return data.files.edges.length > 0;
   } catch (error) {
-    console.error(`Error checking if media exists: ${error.message}`);
+    console.error(`Error checking if image exists: ${error.message}`);
     return false;
   }
 }
 
 /**
- * Fetch all media files from source
+ * Fetch all images from source
  */
-async function fetchSourceMedia(cursor = null) {
-  const allMedia = [];
+async function fetchSourceImages(cursor = null) {
+  const allImages = [];
 
   try {
     const data = await makeGraphQLRequest(
@@ -230,7 +202,7 @@ async function fetchSourceMedia(cursor = null) {
 
       // Handle images
       if (node.image) {
-        allMedia.push({
+        allImages.push({
           type: "IMAGE",
           url: node.image.url,
           alt: node.alt || "",
@@ -239,44 +211,34 @@ async function fetchSourceMedia(cursor = null) {
           height: node.image.height,
         });
       }
-
-      // Handle videos
-      if (node.originalSource) {
-        allMedia.push({
-          type: "VIDEO",
-          url: node.originalSource.url,
-          alt: node.alt || "",
-          filename: getFilenameFromUrl(node.originalSource.url),
-        });
-      }
     }
 
     // Recursively fetch next page
     if (data.files.pageInfo.hasNextPage && mediaFiles.length > 0) {
       const lastCursor = mediaFiles[mediaFiles.length - 1].cursor;
-      const nextMedia = await fetchSourceMedia(lastCursor);
-      allMedia.push(...nextMedia);
+      const nextImages = await fetchSourceImages(lastCursor);
+      allImages.push(...nextImages);
     }
 
-    return allMedia;
+    return allImages;
   } catch (error) {
-    console.error("Error fetching media:", error.message);
+    console.error("Error fetching images:", error.message);
     throw error;
   }
 }
 
 /**
- * Create media file in target store
+ * Create image in target store
  */
-async function createMediaInTarget(mediaInfo) {
+async function createImageInTarget(imageInfo) {
   try {
     const fileCreateInput = {
       files: [
         {
-          alt: mediaInfo.alt || mediaInfo.filename,
-          contentType: mediaInfo.type,
-          originalSource: mediaInfo.url,
-          filename: mediaInfo.filename,
+          alt: imageInfo.alt || imageInfo.filename,
+          contentType: "IMAGE",
+          originalSource: imageInfo.url,
+          filename: imageInfo.filename,
         },
       ],
     };
@@ -297,10 +259,6 @@ async function createMediaInTarget(mediaInfo) {
 
     if (createdFile.image?.url) {
       url = createdFile.image.url;
-    } else if (createdFile.originalSource?.url) {
-      url = createdFile.originalSource.url;
-    } else if (createdFile.sources && createdFile.sources[0]?.url) {
-      url = createdFile.sources[0].url;
     }
 
     return {
@@ -318,25 +276,19 @@ async function createMediaInTarget(mediaInfo) {
 /**
  * Main sync function
  */
-async function syncMedia() {
+async function syncImages() {
   try {
-    console.log("🔄 Media Sync with Duplicate Check (Images & Videos)\n");
+    console.log("🔄 Image Sync with Duplicate Check\n");
     console.log(`📍 Source: ${config.source.store}`);
     console.log(`📍 Target: ${config.target.store}\n`);
 
-    // Fetch all media from source
-    console.log("📥 Fetching media files from source store...");
-    const sourceMedia = await fetchSourceMedia();
+    // Fetch all images from source
+    console.log("📥 Fetching images from source store...");
+    const sourceImages = await fetchSourceImages();
 
-    // Count by type
-    const imageCount = sourceMedia.filter((m) => m.type === "IMAGE").length;
-    const videoCount = sourceMedia.filter((m) => m.type === "VIDEO").length;
+    console.log(`📊 Found ${sourceImages.length} images\n`);
 
-    console.log(`📊 Found ${sourceMedia.length} media files:`);
-    console.log(`   🖼️  Images: ${imageCount}`);
-    console.log(`   🎬 Videos: ${videoCount}\n`);
-
-    // Sync each media file
+    // Sync each image
     let successCount = 0;
     let skippedCount = 0;
     let failureCount = 0;
@@ -346,38 +298,37 @@ async function syncMedia() {
       failed: [],
     };
 
-    console.log("📤 Starting media sync...\n");
+    console.log("📤 Starting image sync...\n");
 
-    for (const media of sourceMedia) {
-      const icon = media.type === "IMAGE" ? "🖼️" : "🎬";
-      process.stdout.write(`${icon}  Checking: ${media.filename}... `);
+    for (const image of sourceImages) {
+      process.stdout.write(`🖼️  Checking: ${image.filename}... `);
 
-      // Check if media already exists
-      const exists = await checkMediaExists(media.filename);
+      // Check if image already exists
+      const exists = await checkImageExists(image.filename);
 
       if (exists) {
         skippedCount++;
         results.skipped.push({
-          filename: media.filename,
-          type: media.type,
+          filename: image.filename,
+          type: "IMAGE",
         });
         console.log("⏭️  Skipped (already exists)");
       } else {
-        const result = await createMediaInTarget(media);
+        const result = await createImageInTarget(image);
 
         if (result.success) {
           successCount++;
           results.synced.push({
-            filename: media.filename,
-            type: media.type,
+            filename: image.filename,
+            type: "IMAGE",
             url: result.url,
           });
           console.log("✅ Synced");
         } else {
           failureCount++;
           results.failed.push({
-            filename: media.filename,
-            type: media.type,
+            filename: image.filename,
+            type: "IMAGE",
             error: result.error,
           });
           console.log(`❌ Failed: ${result.error}`);
@@ -387,31 +338,9 @@ async function syncMedia() {
 
     // Summary
     console.log("\n📊 Sync Summary:");
-    console.log(`✅ Successfully synced: ${successCount} files`);
-    console.log(`⏭️  Skipped (duplicates): ${skippedCount} files`);
-    console.log(`❌ Failed: ${failureCount} files`);
-
-    // Breakdown by type
-    const syncedImages = results.synced.filter(
-      (f) => f.type === "IMAGE"
-    ).length;
-    const syncedVideos = results.synced.filter(
-      (f) => f.type === "VIDEO"
-    ).length;
-    const skippedImages = results.skipped.filter(
-      (f) => f.type === "IMAGE"
-    ).length;
-    const skippedVideos = results.skipped.filter(
-      (f) => f.type === "VIDEO"
-    ).length;
-
-    console.log("\n📊 Breakdown by type:");
-    console.log(
-      `   🖼️  Images: ${syncedImages} synced, ${skippedImages} skipped`
-    );
-    console.log(
-      `   🎬 Videos: ${syncedVideos} synced, ${skippedVideos} skipped`
-    );
+    console.log(`✅ Successfully synced: ${successCount} images`);
+    console.log(`⏭️  Skipped (duplicates): ${skippedCount} images`);
+    console.log(`❌ Failed: ${failureCount} images`);
 
     // Output results as JSON for GitHub Actions
     if (process.env.GITHUB_OUTPUT) {
@@ -430,12 +359,9 @@ async function syncMedia() {
       );
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
-        `synced_images=${syncedImages}\n`
+        `synced_images=${successCount}\n`
       );
-      fs.appendFileSync(
-        process.env.GITHUB_OUTPUT,
-        `synced_videos=${syncedVideos}\n`
-      );
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `synced_videos=0\n`);
       fs.appendFileSync(
         process.env.GITHUB_OUTPUT,
         `results=${JSON.stringify(results)}\n`
@@ -445,8 +371,7 @@ async function syncMedia() {
     if (results.failed.length > 0) {
       console.log("\n❌ Failed files:");
       results.failed.forEach((f) => {
-        const icon = f.type === "IMAGE" ? "🖼️" : "🎬";
-        console.log(`   ${icon} ${f.filename}: ${f.error}`);
+        console.log(`   🖼️ ${f.filename}: ${f.error}`);
       });
     }
 
@@ -460,7 +385,7 @@ async function syncMedia() {
 
 // Run the sync if called directly
 if (require.main === module) {
-  syncMedia();
+  syncImages();
 }
 
-module.exports = { syncMedia };
+module.exports = { syncImages };
