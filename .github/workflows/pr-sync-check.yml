@@ -116,25 +116,25 @@ jobs:
           fi
 
       # Step 5: Setup Node.js for media sync
-      - name: Setup Node.js
-        if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
+      # - name: Setup Node.js
+      #   if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
+      #  uses: actions/setup-node@v4
+      #  with:
+      #    node-version: "18"
 
       # Step 6: Sync Images from Production to Staging
-      - name: Sync Images
-        id: sync-media
-        if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
-        env:
-          SOURCE_STORE: ${{ secrets.PRODUCTION_STORE }}
-          SOURCE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
-          TARGET_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
-          TARGET_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
-        run: |
-          echo "🎬 Starting image sync from production to staging..."
-          cd scripts
-          node sync-images-check.js
+      # - name: Sync Images
+      #  id: sync-media
+      #  if: steps.pr-analysis.outputs.pr_type == 'feature_to_staging' && steps.update-staging.outputs.has_conflicts != 'true'
+      #  env:
+      #    SOURCE_STORE: ${{ secrets.PRODUCTION_STORE }}
+      #    SOURCE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_ADMIN_API_TOKEN }}
+      #    TARGET_STORE: ${{ secrets.SHOPIFY_FLAG_STORE }}
+      #    TARGET_ACCESS_TOKEN: ${{ secrets.STAGING_ADMIN_API_TOKEN }}
+      #  run: |
+      #    echo "🎬 Starting image sync from production to staging..."
+      #    cd scripts
+      #    node sync-images-check.js
 
       # Step 7: Check PR merge conflicts (for feature->staging)
       - name: Check Feature Branch Conflicts
