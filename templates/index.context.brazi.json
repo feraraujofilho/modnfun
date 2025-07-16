@@ -1,1 +1,35 @@
-{"parent":"index.json","context":{"market":"brazi"},"sections":{},"order":["featured-collection","video_U4J44t","image_with_text_TxD8TG","image-with-text","collection_list_FKFTwQ"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "parent": "index.json",
+  "context": {
+    "market": "brazi"
+  },
+  "sections": {
+    "rich_text_iy8iBb": {
+      "settings": {},
+      "blocks": {
+        "heading_yqUFgF": {
+          "settings": {
+            "heading": "This is the brazilian site"
+          }
+        }
+      }
+    }
+  },
+  "order": [
+    "rich_text_iy8iBb",
+    "featured-collection",
+    "video_U4J44t",
+    "image_with_text_TxD8TG",
+    "image-with-text",
+    "collection_list_FKFTwQ"
+  ]
+}
