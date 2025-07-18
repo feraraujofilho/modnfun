@@ -1,0 +1,405 @@
+{{ 'customer.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'reseller-tracker.js' | asset_url }}" defer></script>
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  .reseller-signup-container {
+    max-width: 50rem;
+    margin: 0 auto;
+  }
+
+  .reseller-info-banner {
+    background: #f0f0f0;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .reseller-info-banner h3 {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .form-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .form-tab {
+    padding: 1rem 2rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .form-tab.active {
+    color: #000;
+  }
+
+  .form-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #000;
+  }
+
+  .form-content {
+    display: none;
+  }
+
+  .form-content.active {
+    display: block;
+  }
+
+  .existing-customer-notice {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+{%- endstyle -%}
+
+<div class="customer reseller-signup section-{{ section.id }}-padding">
+  <div class="page-width page-width--narrow">
+    <div class="reseller-signup-container">
+      <!-- Reseller Info Banner -->
+      <div class="reseller-info-banner hidden" data-reseller-info>
+        <h3>{{ section.settings.banner_title | default: 'Welcome!' }}</h3>
+        <p>
+          {{ section.settings.banner_text | default: 'You are signing up through reseller:' }}
+          <strong data-reseller-code></strong>
+        </p>
+      </div>
+
+      <h1>{{ section.settings.page_title | default: 'Join Our Store' }}</h1>
+
+      <!-- Tab Navigation -->
+      <div class="form-tabs">
+        <button class="form-tab active" data-tab="signup">Create Account</button>
+        <button class="form-tab" data-tab="login">Already Have an Account?</button>
+      </div>
+
+      <!-- Signup Form -->
+      <div class="form-content active" id="signup-form">
+        {%- form 'create_customer', novalidate: 'novalidate', id: 'RegisterFormReseller' -%}
+          {%- if form.errors -%}
+            <h2 class="form__message" tabindex="-1" autofocus>
+              <span class="svg-wrapper">
+                {{- 'icon-error.svg' | inline_asset_content -}}
+              </span>
+              {{ 'templates.contact.form.error_heading' | t }}
+            </h2>
+            <ul>
+              {%- for field in form.errors -%}
+                <li>
+                  {%- if field == 'form' -%}
+                    {%- if form.errors.messages[field] contains 'already' -%}
+                      <div class="existing-customer-notice">
+                        <strong>Account already exists!</strong><br>
+                        Please use the login form to access your account.
+                      </div>
+                    {%- else -%}
+                      {{ form.errors.messages[field] }}
+                    {%- endif -%}
+                  {%- else -%}
+                    <a href="#RegisterFormReseller-{{ field }}">
+                      {{ form.errors.translated_fields[field] | capitalize }}
+                      {{ form.errors.messages[field] }}
+                    </a>
+                  {%- endif -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          <div class="field">
+            <input
+              type="text"
+              name="customer[first_name]"
+              id="RegisterFormReseller-FirstName"
+              {% if form.first_name %}
+                value="{{ form.first_name }}"
+              {% endif %}
+              autocomplete="given-name"
+              placeholder="{{ 'customer.register.first_name' | t }}"
+              aria-required="true"
+              required
+            >
+            <label for="RegisterFormReseller-FirstName">
+              {{ 'customer.register.first_name' | t }}
+              <span aria-hidden="true">*</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <input
+              type="text"
+              name="customer[last_name]"
+              id="RegisterFormReseller-LastName"
+              {% if form.last_name %}
+                value="{{ form.last_name }}"
+              {% endif %}
+              autocomplete="family-name"
+              placeholder="{{ 'customer.register.last_name' | t }}"
+              aria-required="true"
+              required
+            >
+            <label for="RegisterFormReseller-LastName">
+              {{ 'customer.register.last_name' | t }}
+              <span aria-hidden="true">*</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <input
+              type="email"
+              name="customer[email]"
+              id="RegisterFormReseller-email"
+              {% if form.email %}
+                value="{{ form.email }}"
+              {% endif %}
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="email"
+              aria-required="true"
+              required
+              {% if form.errors contains 'email' %}
+                aria-invalid="true"
+                aria-describedby="RegisterFormReseller-email-error"
+              {% endif %}
+              placeholder="{{ 'customer.register.email' | t }}"
+            >
+            <label for="RegisterFormReseller-email">
+              {{ 'customer.register.email' | t }}
+              <span aria-hidden="true">*</span>
+            </label>
+          </div>
+          {%- if form.errors contains 'email' -%}
+            <span id="RegisterFormReseller-email-error" class="form__message">
+              <span class="svg-wrapper">
+                {{- 'icon-error.svg' | inline_asset_content -}}
+              </span>
+              {{ form.errors.translated_fields.email | capitalize }}
+              {{ form.errors.messages.email }}.
+            </span>
+          {%- endif -%}
+
+          <div class="field">
+            <input
+              type="password"
+              name="customer[password]"
+              id="RegisterFormReseller-password"
+              aria-required="true"
+              required
+              {% if form.errors contains 'password' %}
+                aria-invalid="true"
+                aria-describedby="RegisterFormReseller-password-error"
+              {% endif %}
+              placeholder="{{ 'customer.register.password' | t }}"
+            >
+            <label for="RegisterFormReseller-password">
+              {{ 'customer.register.password' | t }}
+              <span aria-hidden="true">*</span>
+            </label>
+          </div>
+          {%- if form.errors contains 'password' -%}
+            <span id="RegisterFormReseller-password-error" class="form__message">
+              <span class="svg-wrapper">
+                {{- 'icon-error.svg' | inline_asset_content -}}
+              </span>
+              {{ form.errors.translated_fields.password | capitalize }}
+              {{ form.errors.messages.password }}.
+            </span>
+          {%- endif -%}
+
+          <button type="submit" class="button button--primary">
+            {{ 'customer.register.submit' | t }}
+          </button>
+        {%- endform -%}
+      </div>
+
+      <!-- Login Form -->
+      <div class="form-content" id="login-form">
+        <p class="reseller-login-notice">
+          {{
+            section.settings.login_notice
+            | default: 'If you already have an account, please log in. Your reseller association has been recorded.'
+          }}
+        </p>
+
+        {%- form 'customer_login', novalidate: 'novalidate', id: 'CustomerLoginFormReseller' -%}
+          {%- if form.errors -%}
+            <h2 class="form__message" tabindex="-1" autofocus>
+              <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+              <span class="svg-wrapper">
+                {{- 'icon-error.svg' | inline_asset_content -}}
+              </span>
+              {{ 'templates.contact.form.error_heading' | t }}
+            </h2>
+            {{ form.errors | default_errors }}
+          {%- endif -%}
+
+          <div class="field">
+            <input
+              type="email"
+              name="customer[email]"
+              id="CustomerEmailReseller"
+              autocomplete="email"
+              autocorrect="off"
+              autocapitalize="off"
+              {% if form.errors contains 'form' %}
+                aria-invalid="true"
+              {% endif %}
+              placeholder="{{ 'customer.login_page.email' | t }}"
+              required
+            >
+            <label for="CustomerEmailReseller">
+              {{ 'customer.login_page.email' | t }}
+            </label>
+          </div>
+
+          <div class="field">
+            <input
+              type="password"
+              value=""
+              name="customer[password]"
+              id="CustomerPasswordReseller"
+              autocomplete="current-password"
+              {% if form.errors contains 'form' %}
+                aria-invalid="true"
+              {% endif %}
+              placeholder="{{ 'customer.login_page.password' | t }}"
+              required
+            >
+            <label for="CustomerPasswordReseller">
+              {{ 'customer.login_page.password' | t }}
+            </label>
+          </div>
+
+          <a href="{{ routes.account_recover_url }}">
+            {{ 'customer.login_page.forgot_password' | t }}
+          </a>
+
+          <button type="submit" class="button button--primary">
+            {{ 'customer.login_page.sign_in' | t }}
+          </button>
+        {%- endform -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.form-tab');
+    const formContents = document.querySelectorAll('.form-content');
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', function () {
+        const targetTab = this.getAttribute('data-tab');
+
+        // Update active states
+        tabs.forEach((t) => t.classList.remove('active'));
+        formContents.forEach((content) => content.classList.remove('active'));
+
+        this.classList.add('active');
+        document.getElementById(`${targetTab}-form`).classList.add('active');
+      });
+    });
+
+    // Auto-switch to login tab if signup form has "already exists" error
+    const existingCustomerNotice = document.querySelector('.existing-customer-notice');
+    const formErrors = document.querySelector('#signup-form .form__message');
+
+    if (existingCustomerNotice || (formErrors && formErrors.textContent.toLowerCase().includes('already'))) {
+      setTimeout(() => {
+        document.querySelector('[data-tab="login"]').click();
+      }, 2000);
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Reseller Signup",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "page_title",
+      "label": "Page Title",
+      "default": "Join Our Store"
+    },
+    {
+      "type": "text",
+      "id": "banner_title",
+      "label": "Banner Title",
+      "default": "Welcome!"
+    },
+    {
+      "type": "text",
+      "id": "banner_text",
+      "label": "Banner Text",
+      "default": "You are signing up through reseller:"
+    },
+    {
+      "type": "textarea",
+      "id": "login_notice",
+      "label": "Login Notice",
+      "default": "If you already have an account, please log in. Your reseller association has been recorded."
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 36
+    }
+  ]
+}
+{% endschema %}

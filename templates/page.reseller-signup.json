@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "main": {
+      "type": "reseller-signup",
+      "settings": {}
+    }
+  },
+  "order": ["main"]
+}
