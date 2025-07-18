@@ -1,1 +1,20 @@
-{"sections":{"forms":{"type":"apps","blocks":{"35542919-3e02-4347-8b1a-6826ed02d2fd":{"type":"shopify:\/\/apps\/forms\/blocks\/inline\/8744a304-fcb1-4347-b211-bb6b4759a76a","settings":{"form_id":"100357"}}},"block_order":["35542919-3e02-4347-8b1a-6826ed02d2fd"],"settings":{}},"98006c25-5895-4f74-b3e6-8ebbc3e713b2":{"type":"main-page","settings":{}}},"order":["98006c25-5895-4f74-b3e6-8ebbc3e713b2","forms"]}
+{
+  "sections": {
+    "forms": {
+      "type": "apps",
+      "blocks": {
+        "35542919-3e02-4347-8b1a-6826ed02d2fd": {
+          "type": "shopify://apps/forms/blocks/inline/8744a304-fcb1-4347-b211-bb6b4759a76a",
+          "settings": { "form_id": "100357" }
+        }
+      },
+      "block_order": ["35542919-3e02-4347-8b1a-6826ed02d2fd"],
+      "settings": {}
+    },
+    "98006c25-5895-4f74-b3e6-8ebbc3e713b2": {
+      "type": "main-page",
+      "settings": {}
+    }
+  },
+  "order": ["98006c25-5895-4f74-b3e6-8ebbc3e713b2", "forms"]
+}

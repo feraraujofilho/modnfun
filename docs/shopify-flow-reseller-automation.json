@@ -1,0 +1,50 @@
+{
+  "name": "Reseller Code to Metafield Automation",
+  "description": "Automatically extracts reseller code from customer note or tags and stores it in a customer metafield",
+  "trigger": {
+    "type": "customer_created",
+    "description": "Triggers when a new customer account is created"
+  },
+  "conditions": [
+    {
+      "type": "OR",
+      "conditions": [
+        {
+          "field": "customer.note",
+          "operator": "contains",
+          "value": "Reseller Code:"
+        },
+        {
+          "field": "customer.tags",
+          "operator": "contains",
+          "value": "reseller-"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "update_customer_metafield",
+      "metafield": {
+        "namespace": "custom",
+        "key": "reseller_code",
+        "type": "single_line_text_field",
+        "value": "{{ extractResellerCode }}"
+      }
+    },
+    {
+      "type": "add_customer_tag",
+      "tag": "reseller-tracked"
+    }
+  ],
+  "liquid_variables": {
+    "extractResellerCode": "{% if customer.note contains 'Reseller Code:' %}{% assign parts = customer.note | split: 'Reseller Code: ' %}{% assign code = parts[1] | split: ' ' | first %}{{ code }}{% elsif customer.tags contains 'reseller-' %}{% for tag in customer.tags %}{% if tag contains 'reseller-' %}{% assign code = tag | remove: 'reseller-' %}{{ code }}{% break %}{% endif %}{% endfor %}{% endif %}"
+  },
+  "setup_instructions": [
+    "1. Install Shopify Flow from the Shopify App Store",
+    "2. Create a new workflow using this template",
+    "3. Create the customer metafield definition in Settings > Custom data > Customers",
+    "4. Set the metafield namespace to 'custom' and key to 'reseller_code'",
+    "5. Test with a sample customer registration"
+  ]
+}
