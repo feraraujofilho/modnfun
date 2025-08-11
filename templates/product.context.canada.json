@@ -12,5 +12,16 @@
   "context": {
     "market": "canada"
   },
-  "sections": {}
+  "sections": {
+    "main": {
+      "settings": {},
+      "blocks": {
+        "custom_liquid_tgKB3F": {
+          "settings": {
+            "custom_liquid": "{% if variant.inventory_quantity != null and variant.inventory_quantity > 0 %}\n  <span class=\"in-stock\">{{ variant.inventory_quantity }} available</span>\n{% elsif variant.inventory_quantity == null %}\n  <span class=\"in-stock\">Available</span>\n    </p>\n{% else %}\n  <span class=\"out-of-stock\">Out of stock</span>\n{% endif %}"
+          }
+        }
+      }
+    }
+  }
 }
