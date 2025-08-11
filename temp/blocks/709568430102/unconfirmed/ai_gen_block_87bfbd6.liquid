@@ -1,6 +1,582 @@
+{% doc %}
+  @prompt
+    Create a custom liquid block that displays product variant inventory quantities with proper handling for when inventory tracking is enabled or disabled, showing available stock count or out of stock status
+
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-inventory-display-{{ ai_gen_id }} {
+    padding: {{ block.settings.padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+    border: {{ block.settings.border_width }}px solid {{ block.settings.border_color }};
+    text-align: {{ block.settings.text_alignment }};
+  }
+
+  .ai-inventory-display__title-{{ ai_gen_id }} {
+    font-size: {{ block.settings.title_size }}px;
+    font-weight: 600;
+    color: {{ block.settings.title_color }};
+    margin: 0 0 12px 0;
+  }
+
+  .ai-inventory-display__status-{{ ai_gen_id }} {
+    font-size: {{ block.settings.text_size }}px;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .ai-inventory-display__status-{{ ai_gen_id }}.in-stock {
+    color: {{ block.settings.in_stock_color }};
+  }
+
+  .ai-inventory-display__status-{{ ai_gen_id }}.low-stock {
+    color: {{ block.settings.low_stock_color }};
+  }
+
+  .ai-inventory-display__status-{{ ai_gen_id }}.out-of-stock {
+    color: {{ block.settings.out_of_stock_color }};
+  }
+
+  .ai-inventory-display__status-{{ ai_gen_id }}.no-tracking {
+    color: {{ block.settings.no_tracking_color }};
+  }
+
+  .ai-inventory-display__count-{{ ai_gen_id }} {
+    font-size: {{ block.settings.count_size }}px;
+    font-weight: 700;
+    margin: 8px 0 0 0;
+    color: {{ block.settings.count_color }};
+  }
+
+  .ai-inventory-display__message-{{ ai_gen_id }} {
+    font-size: {{ block.settings.message_size }}px;
+    margin: 8px 0 0 0;
+    color: {{ block.settings.message_color }};
+  }
+
+  .ai-inventory-display__icon-{{ ai_gen_id }} {
+    display: inline-block;
+    width: {{ block.settings.icon_size }}px;
+    height: {{ block.settings.icon_size }}px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-inventory-display-{{ ai_gen_id }} {
+      padding: {{ block.settings.padding | times: 0.8 }}px;
+    }
+
+    .ai-inventory-display__title-{{ ai_gen_id }} {
+      font-size: {{ block.settings.title_size | times: 0.9 }}px;
+    }
+
+    .ai-inventory-display__status-{{ ai_gen_id }} {
+      font-size: {{ block.settings.text_size | times: 0.9 }}px;
+    }
+  }
+{% endstyle %}
+
+<inventory-display-{{ ai_gen_id }}
+  class="ai-inventory-display-{{ ai_gen_id }}"
+  data-product-id="{{ product.id }}"
+  data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+  data-low-stock-threshold="{{ block.settings.low_stock_threshold }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.show_title %}
+    <h3 class="ai-inventory-display__title-{{ ai_gen_id }}">
+      {{ block.settings.title }}
+    </h3>
+  {% endif %}
+
+  <div class="ai-inventory-display__content-{{ ai_gen_id }}">
+    {% assign current_variant = product.selected_or_first_available_variant %}
+    
+    {% if current_variant.inventory_management == 'shopify' %}
+      {% if current_variant.inventory_policy == 'deny' %}
+        {% if current_variant.inventory_quantity > 0 %}
+          {% if current_variant.inventory_quantity <= block.settings.low_stock_threshold %}
+            <p class="ai-inventory-display__status-{{ ai_gen_id }} low-stock">
+              {% if block.settings.show_icons %}
+                <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </span>
+              {% endif %}
+              {{ block.settings.low_stock_text }}
+            </p>
+            {% if block.settings.show_exact_count %}
+              <p class="ai-inventory-display__count-{{ ai_gen_id }}">
+                {{ current_variant.inventory_quantity }} {{ block.settings.count_label }}
+              </p>
+            {% endif %}
+          {% else %}
+            <p class="ai-inventory-display__status-{{ ai_gen_id }} in-stock">
+              {% if block.settings.show_icons %}
+                <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20,6 9,17 4,12"/>
+                  </svg>
+                </span>
+              {% endif %}
+              {{ block.settings.in_stock_text }}
+            </p>
+            {% if block.settings.show_exact_count %}
+              <p class="ai-inventory-display__count-{{ ai_gen_id }}">
+                {{ current_variant.inventory_quantity }} {{ block.settings.count_label }}
+              </p>
+            {% endif %}
+          {% endif %}
+        {% else %}
+          <p class="ai-inventory-display__status-{{ ai_gen_id }} out-of-stock">
+            {% if block.settings.show_icons %}
+              <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </span>
+            {% endif %}
+            {{ block.settings.out_of_stock_text }}
+          </p>
+        {% endif %}
+      {% else %}
+        <p class="ai-inventory-display__status-{{ ai_gen_id }} in-stock">
+          {% if block.settings.show_icons %}
+            <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+            </span>
+          {% endif %}
+          {{ block.settings.in_stock_text }}
+        </p>
+        {% if block.settings.show_exact_count and current_variant.inventory_quantity > 0 %}
+          <p class="ai-inventory-display__count-{{ ai_gen_id }}">
+            {{ current_variant.inventory_quantity }} {{ block.settings.count_label }}
+          </p>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      {% if current_variant.available %}
+        <p class="ai-inventory-display__status-{{ ai_gen_id }} no-tracking">
+          {% if block.settings.show_icons %}
+            <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+            </span>
+          {% endif %}
+          {{ block.settings.no_tracking_text }}
+        </p>
+      {% else %}
+        <p class="ai-inventory-display__status-{{ ai_gen_id }} out-of-stock">
+          {% if block.settings.show_icons %}
+            <span class="ai-inventory-display__icon-{{ ai_gen_id }}">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </span>
+          {% endif %}
+          {{ block.settings.out_of_stock_text }}
+        </p>
+      {% endif %}
+    {% endif %}
+
+    {% if block.settings.show_custom_message and block.settings.custom_message != blank %}
+      <p class="ai-inventory-display__message-{{ ai_gen_id }}">
+        {{ block.settings.custom_message }}
+      </p>
+    {% endif %}
+  </div>
+</inventory-display-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class InventoryDisplay{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentVariantId = this.dataset.variantId;
+        this.lowStockThreshold = parseInt(this.dataset.lowStockThreshold) || 5;
+      }
+
+      connectedCallback() {
+        this.setupVariantChangeListener();
+      }
+
+      setupVariantChangeListener() {
+        document.addEventListener('variant:change', (event) => {
+          if (event.detail && event.detail.variant) {
+            this.updateInventoryDisplay(event.detail.variant);
+          }
+        });
+
+        const variantSelectors = document.querySelectorAll('variant-radios, variant-selects');
+        variantSelectors.forEach(selector => {
+          selector.addEventListener('change', () => {
+            const selectedVariant = this.getSelectedVariant();
+            if (selectedVariant) {
+              this.updateInventoryDisplay(selectedVariant);
+            }
+          });
+        });
+      }
+
+      getSelectedVariant() {
+        const productForm = document.querySelector('product-form form');
+        if (!productForm) return null;
+
+        const formData = new FormData(productForm);
+        const variantId = formData.get('id');
+        
+        if (window.productVariants && variantId) {
+          return window.productVariants.find(variant => variant.id == variantId);
+        }
+        
+        return null;
+      }
+
+      updateInventoryDisplay(variant) {
+        if (!variant || variant.id == this.currentVariantId) return;
+        
+        this.currentVariantId = variant.id;
+        const contentElement = this.querySelector('.ai-inventory-display__content-{{ ai_gen_id }}');
+        
+        if (!contentElement) return;
+
+        let statusClass = '';
+        let iconSvg = '';
+        let statusText = '';
+        let countHtml = '';
+
+        const showIcons = {{ block.settings.show_icons | json }};
+        const showExactCount = {{ block.settings.show_exact_count | json }};
+
+        if (variant.inventory_management === 'shopify') {
+          if (variant.inventory_policy === 'deny') {
+            if (variant.inventory_quantity > 0) {
+              if (variant.inventory_quantity <= this.lowStockThreshold) {
+                statusClass = 'low-stock';
+                statusText = {{ block.settings.low_stock_text | json }};
+                iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+              } else {
+                statusClass = 'in-stock';
+                statusText = {{ block.settings.in_stock_text | json }};
+                iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>';
+              }
+              if (showExactCount) {
+                countHtml = `<p class="ai-inventory-display__count-{{ ai_gen_id }}">${variant.inventory_quantity} {{ block.settings.count_label }}</p>`;
+              }
+            } else {
+              statusClass = 'out-of-stock';
+              statusText = {{ block.settings.out_of_stock_text | json }};
+              iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+            }
+          } else {
+            statusClass = 'in-stock';
+            statusText = {{ block.settings.in_stock_text | json }};
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>';
+            if (showExactCount && variant.inventory_quantity > 0) {
+              countHtml = `<p class="ai-inventory-display__count-{{ ai_gen_id }}">${variant.inventory_quantity} {{ block.settings.count_label }}</p>`;
+            }
+          }
+        } else {
+          if (variant.available) {
+            statusClass = 'no-tracking';
+            statusText = {{ block.settings.no_tracking_text | json }};
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>';
+          } else {
+            statusClass = 'out-of-stock';
+            statusText = {{ block.settings.out_of_stock_text | json }};
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+          }
+        }
+
+        const iconHtml = showIcons ? `<span class="ai-inventory-display__icon-{{ ai_gen_id }}">${iconSvg}</span>` : '';
+        const customMessageHtml = {{ block.settings.show_custom_message | json }} && {{ block.settings.custom_message | json }} ? 
+          `<p class="ai-inventory-display__message-{{ ai_gen_id }}">{{ block.settings.custom_message }}</p>` : '';
+
+        contentElement.innerHTML = `
+          <p class="ai-inventory-display__status-{{ ai_gen_id }} ${statusClass}">
+            ${iconHtml}${statusText}
+          </p>
+          ${countHtml}
+          ${customMessageHtml}
+        `;
+      }
+    }
+
+    customElements.define('inventory-display-{{ ai_gen_id }}', InventoryDisplay{{ ai_gen_id }});
+  })();
+</script>
+
 {% schema %}
- {
-   "name": "AI_Block",
-   "tag": "shopify-ai-generated-block"
- }
+{
+  "name": "Product inventory display",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_title",
+      "label": "Show title",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Availability"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icons",
+      "label": "Show status icons",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_exact_count",
+      "label": "Show exact inventory count",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "count_label",
+      "label": "Count label",
+      "default": "left in stock"
+    },
+    {
+      "type": "range",
+      "id": "low_stock_threshold",
+      "min": 1,
+      "max": 20,
+      "step": 1,
+      "label": "Low stock threshold",
+      "default": 5
+    },
+    {
+      "type": "header",
+      "content": "Status messages"
+    },
+    {
+      "type": "text",
+      "id": "in_stock_text",
+      "label": "In stock text",
+      "default": "In stock"
+    },
+    {
+      "type": "text",
+      "id": "low_stock_text",
+      "label": "Low stock text",
+      "default": "Low stock"
+    },
+    {
+      "type": "text",
+      "id": "out_of_stock_text",
+      "label": "Out of stock text",
+      "default": "Out of stock"
+    },
+    {
+      "type": "text",
+      "id": "no_tracking_text",
+      "label": "No tracking text",
+      "default": "Available"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_custom_message",
+      "label": "Show custom message",
+      "default": false
+    },
+    {
+      "type": "textarea",
+      "id": "custom_message",
+      "label": "Custom message"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#f8f8f8"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Title",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "in_stock_color",
+      "label": "In stock",
+      "default": "#008060"
+    },
+    {
+      "type": "color",
+      "id": "low_stock_color",
+      "label": "Low stock",
+      "default": "#ff9500"
+    },
+    {
+      "type": "color",
+      "id": "out_of_stock_color",
+      "label": "Out of stock",
+      "default": "#d82c0d"
+    },
+    {
+      "type": "color",
+      "id": "no_tracking_color",
+      "label": "No tracking",
+      "default": "#666666"
+    },
+    {
+      "type": "color",
+      "id": "count_color",
+      "label": "Count",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "message_color",
+      "label": "Message",
+      "default": "#666666"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "Title size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Status text size",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "count_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Count size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "message_size",
+      "min": 10,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "label": "Message size",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "min": 12,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "label": "Icon size",
+      "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "label": "Border radius",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "label": "Border width",
+      "default": 1
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product inventory display"
+    }
+  ],
+  "tag": null
+}
 {% endschema %}
