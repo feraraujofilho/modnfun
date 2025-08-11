@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "sections": {
     "main": {
@@ -29,12 +38,18 @@
           "type": "quantity_selector",
           "settings": {}
         },
-        "subscriptions_app_block_Mtqb7i": {
-          "type": "shopify:\/\/apps\/subscriptions\/blocks\/app-block\/a3bfe9ec-96f8-4508-a003-df608a36d2ad",
+        "custom_liquid_tgKB3F": {
+          "type": "custom_liquid",
           "settings": {
-            "color_text_body": "#6D7175",
-            "dividers_color": "#8F8D8D",
-            "bacgkround_color": "#FFFFFF",
+            "custom_liquid": "{% if variant.inventory_quantity > 0 %}\n  <span class=\"in-stock\">{{ variant.inventory_quantity }} available</span>\n{% else %}\n  <span class=\"out-of-stock\">Out of stock</span>\n{% endif %}"
+          }
+        },
+        "subscriptions_app_block_Mtqb7i": {
+          "type": "shopify://apps/subscriptions/blocks/app-block/a3bfe9ec-96f8-4508-a003-df608a36d2ad",
+          "settings": {
+            "color_text_body": "#6d7175",
+            "dividers_color": "#8f8d8d",
+            "bacgkround_color": "#ffffff",
             "border_thickness": 1,
             "border_radius": 0,
             "subscription_policy_url": "",
@@ -65,6 +80,7 @@
         "price",
         "variant_picker",
         "quantity_selector",
+        "custom_liquid_tgKB3F",
         "subscriptions_app_block_Mtqb7i",
         "buy_buttons",
         "description",
@@ -113,7 +129,7 @@
           "settings": {
             "image": "{{ block.repeater.photo.value }}",
             "title": "{{ block.repeater.name.value }}",
-            "text": "<p>{{ block.repeater.bio | metafield_tag }}<\/p>",
+            "text": "<p>{{ block.repeater.bio | metafield_tag }}</p>",
             "link_label": "",
             "link": "{{ block.repeater.social_link.value }}"
           }
@@ -138,11 +154,27 @@
         "padding_top": 36,
         "padding_bottom": 36
       }
+    },
+    "1754905210f73bf8f8": {
+      "type": "_blocks",
+      "settings": {}
+    },
+    "custom_liquid_TiiVTE": {
+      "type": "custom-liquid",
+      "name": "t:sections.custom-liquid.presets.name",
+      "settings": {
+        "custom_liquid": "",
+        "color_scheme": "",
+        "padding_top": 40,
+        "padding_bottom": 52
+      }
     }
   },
   "order": [
     "main",
     "related-products",
-    "multicolumn_9TctmP"
+    "multicolumn_9TctmP",
+    "1754905210f73bf8f8",
+    "custom_liquid_TiiVTE"
   ]
 }
