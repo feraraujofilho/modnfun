@@ -63,7 +63,7 @@
             "message_size": 12,
             "icon_size": 16,
             "header-a5b65023085f760f18fd6857f9dccbef": null,
-            "text_alignment": "left",
+            "text_alignment": "center",
             "padding": 16,
             "border_radius": 8,
             "border_width": 1
