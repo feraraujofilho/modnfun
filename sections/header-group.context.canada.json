@@ -8,15 +8,9 @@
  * ------------------------------------------------------------
  */
 {
-  "markets": {
-    "brazi": {
-      "parent": "@default"
-    },
-    "france": {
-      "parent": "@default"
-    },
-    "canada": {
-      "parent": "@default"
-    }
-  }
+  "parent": "header-group.json",
+  "context": {
+    "market": "canada"
+  },
+  "sections": {}
 }
