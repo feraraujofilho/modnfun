@@ -18,10 +18,69 @@
       "blocks": {
         "custom_liquid_tgKB3F": {
           "settings": {
-            "custom_liquid": "{% if variant.inventory_quantity != null and variant.inventory_quantity > 0 %}\n  <span class=\"in-stock\">{{ variant.inventory_quantity }} available</span>\n{% elsif variant.inventory_quantity == null %}\n  <span class=\"in-stock\">Available</span>\n    </p>\n{% else %}\n  <span class=\"out-of-stock\">Out of stock</span>\n{% endif %}"
+            "custom_liquid": "{% if variant.inventory_quantity != null and variant.inventory_quantity > 0 %}\n  <span class=\"in-stock\">{{ variant.inventory_quantity }} available</span>\n{% elsif variant.inventory_quantity == null %}\n  <span class=\"in-stock\">Available</span>\n    </p>\n{% else %}\n  <span class=\"out-of-stock\">Out of stock</span>\n{% endif %}\n\n<!-- Debug info -->\n<p>Variant ID: {{ variant.id }}</p>\n<p>Inventory Management: {{ variant.inventory_management }}</p>\n<p>Inventory Quantity: {{ variant.inventory_quantity }}</p>\n<p>Available: {{ variant.available }}</p>\n\n<!-- Your display code -->\n{% if variant.inventory_management %}\n  {% if variant.inventory_quantity != null and variant.inventory_quantity > 0 %}\n    <span class=\"in-stock\">{{ variant.inventory_quantity }} available</span>\n  {% elsif variant.inventory_quantity == 0 %}\n    <span class=\"out-of-stock\">Out of stock</span>\n  {% else %}\n    <span class=\"unknown\">Quantity unknown</span>\n  {% endif %}\n{% else %}\n  <span class=\"in-stock\">Available (tracking disabled)</span>\n{% endif %}"
           }
         }
       }
+    },
+    "1754906071a8b8eddc": {
+      "type": "_blocks",
+      "disabled": false,
+      "settings": {},
+      "blocks": {
+        "ai_gen_block_87bfbd6_E8xGX": {
+          "type": "ai_gen_block_87bfbd6",
+          "disabled": false,
+          "settings": {
+            "header-cb5cb6e25ca045f8f9d6f19ca4239934": null,
+            "show_title": true,
+            "title": "Availability",
+            "show_icons": true,
+            "show_exact_count": true,
+            "count_label": "left in stock",
+            "low_stock_threshold": 5,
+            "header-8cff4f9954b7a2850f3838d314012fcb": null,
+            "in_stock_text": "In stock",
+            "low_stock_text": "Low stock",
+            "out_of_stock_text": "Out of stock",
+            "no_tracking_text": "Available",
+            "show_custom_message": false,
+            "custom_message": "",
+            "header-7e1469346a69cd5345cd2668b6a25369": null,
+            "background_color": "#f8f8f8",
+            "title_color": "#000000",
+            "in_stock_color": "#008060",
+            "low_stock_color": "#ff9500",
+            "out_of_stock_color": "#d82c0d",
+            "no_tracking_color": "#666666",
+            "count_color": "#000000",
+            "message_color": "#666666",
+            "border_color": "#e0e0e0",
+            "header-9bd27f2be1a8e3f67924245e86d2e0be": null,
+            "title_size": 16,
+            "text_size": 14,
+            "count_size": 16,
+            "message_size": 12,
+            "icon_size": 16,
+            "header-a5b65023085f760f18fd6857f9dccbef": null,
+            "text_alignment": "left",
+            "padding": 16,
+            "border_radius": 8,
+            "border_width": 1
+          }
+        }
+      },
+      "block_order": [
+        "ai_gen_block_87bfbd6_E8xGX"
+      ]
     }
-  }
+  },
+  "order": [
+    "main",
+    "1754906071a8b8eddc",
+    "related-products",
+    "multicolumn_9TctmP",
+    "1754905210f73bf8f8",
+    "custom_liquid_TiiVTE"
+  ]
 }
