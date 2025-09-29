@@ -547,7 +547,7 @@
         "payment_above_threshold": "Der Zahlungsbetrag liegt über dem Geldlimit für diese Region"
       },
       "payment": {
-        "markets_pro_disclaimer_privacy_policy": "Datenschutz"
+        "markets_pro_disclaimer_privacy_policy": "Company policy"
       }
     }
   },
