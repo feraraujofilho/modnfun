@@ -558,6 +558,9 @@
       },
       "shop_policies": {
         "privacy_policy": "Company Privacy"
+      },
+      "order_summary": {
+        "estimated_taxes_finalization_tooltip_content": "Taxes for your line items"
       }
     }
   },
