@@ -9,9 +9,6 @@
  */
 {
   "markets": {
-    "brazi": {
-      "parent": "@default"
-    },
     "france": {
       "parent": "@default"
     },
