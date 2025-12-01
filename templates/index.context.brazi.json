@@ -22,9 +22,20 @@
           }
         }
       }
+    },
+    "image_banner_Y8rTnA": {
+      "settings": {},
+      "blocks": {
+        "heading_kFyHJF": {
+          "settings": {
+            "heading": "Brazilian Site"
+          }
+        }
+      }
     }
   },
   "order": [
+    "image_banner_Y8rTnA",
     "rich_text_iy8iBb",
     "featured-collection",
     "image_with_text_TxD8TG",
