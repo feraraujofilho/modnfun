@@ -566,6 +566,11 @@
       "vat_invoices": {
         "title": "Mehrwertsteuerrechnungen"
       }
+    },
+    "sign_in": {
+      "step_one": {
+        "subheading": "Wenn du auf “Weiter” klickst, stimmst du den [AGB zu und bestätigst](https://modnfun.myshopify.com/policies/privacy-policy), dass du die Datenschutzerklärung zur Kenntnis genommen hast."
+      }
     }
   }
 }
