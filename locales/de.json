@@ -569,7 +569,7 @@
     },
     "sign_in": {
       "step_one": {
-        "subheading": "Wenn du auf “Weiter” klickst, stimmst du den [AGB zu und bestätigst](https://modnfun.myshopify.com/policies/privacy-policy), dass du die Datenschutzerklärung zur Kenntnis genommen hast."
+        "subheading": "Wenn du auf \"Weiter\" klickst, stimmst du den <a href=\"https://modnfun.myshopify.com/policies/terms-of-service\">AGB</a> zu und bestätigst, dass du die <a href=\"https://modnfun.myshopify.com/policies/privacy-policy\">Datenschutzerklärung</a> zur Kenntnis genommen hast."
       }
     }
   }
